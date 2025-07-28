@@ -1,29 +1,42 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ChevronRight, Sparkles, BookOpen, Target, Users, LogIn } from "lucide-react";
+import React, { useState, useEffect, useContext } from "react";
+import {
+  ChevronRight,
+  Sparkles,
+  BookOpen,
+  Target,
+  Users,
+  LogIn,
+  LogOut,
+} from "lucide-react";
 import useInView from "../../lib/utils";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "@/lib/auth/auth-provider";
 
 const Hero = () => {
   const router = useRouter();
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
+  const logOut = authContext?.logOut;
   const [activeFeature, setActiveFeature] = useState(0);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const features = [
     {
       icon: <Target className="h-6 w-6" />,
       text: "Take the Assessment Test",
-      color: "bg-tathir-maroon"
+      color: "bg-tathir-maroon",
     },
     {
       icon: <BookOpen className="h-6 w-6" />,
       text: "Get the IBA Book",
-      color: "bg-tathir-brown"
+      color: "bg-tathir-brown",
     },
     {
       icon: <Users className="h-6 w-6" />,
       text: "Join the Community",
-      color: "bg-tathir-dark-green"
-    }
+      color: "bg-tathir-dark-green",
+    },
   ];
 
   useEffect(() => {
@@ -35,7 +48,6 @@ const Hero = () => {
 
   return (
     <section className="w-full min-h-screen pb-12 sm:pb-20 pt-16 sm:pt-24 relative flex flex-col items-center justify-center text-center px-4 sm:px-6 overflow-hidden">
-
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute w-[20rem] sm:w-[40rem] h-[20rem] sm:h-[40rem] bg-tathir-maroon/20 rounded-full blur-3xl -top-48 sm:-top-96 -left-24 sm:-left-48 animate-pulse"></div>
@@ -52,12 +64,22 @@ const Hero = () => {
                 <span className="inline-flex items-center">
                   <span className="relative">
                     {/* Main text with bottom-right shadow layers for 3D block effect */}
-                    <span className="absolute left-1 sm:left-2 top-1 sm:top-2 text-[#7a4f3a]">TathirMichil</span>
-                    <span className="absolute left-0.5 sm:left-1.5 top-0.5 sm:top-1.5 text-[#7a4f3a]">TathirMichil</span>
-                    <span className="absolute left-0.5 sm:left-1 top-0.5 sm:top-1 text-[#7a4f3a]">TathirMichil</span>
-                    <span className="absolute left-0.25 sm:left-0.5 top-0.25 sm:top-0.5 text-[#7a4f3a]">TathirMichil</span>
-                    <span className="relative text-tathir-beige 
-                      [text-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_0_#7a4f3a,4px_4px_0_#7a4f3a,5px_5px_0_#7a4f3a,6px_6px_1px_rgba(0,0,0,.1),0_0_5px_rgba(0,0,0,.1),1px_1px_3px_rgba(0,0,0,.3),3px_3px_5px_rgba(0,0,0,.2),5px_5px_10px_rgba(0,0,0,.25),8px_8px_10px_rgba(0,0,0,.2),12px_12px_20px_rgba(0,0,0,.15)] sm:[text-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1),0_0_5px_rgba(0,0,0,.1),2px_2px_3px_rgba(0,0,0,.3),6px_6px_5px_rgba(0,0,0,.2),10px_10px_10px_rgba(0,0,0,.25),15px_15px_10px_rgba(0,0,0,.2),20px_20px_20px_rgba(0,0,0,.15)]">
+                    <span className="absolute left-1 sm:left-2 top-1 sm:top-2 text-[#7a4f3a]">
+                      TathirMichil
+                    </span>
+                    <span className="absolute left-0.5 sm:left-1.5 top-0.5 sm:top-1.5 text-[#7a4f3a]">
+                      TathirMichil
+                    </span>
+                    <span className="absolute left-0.5 sm:left-1 top-0.5 sm:top-1 text-[#7a4f3a]">
+                      TathirMichil
+                    </span>
+                    <span className="absolute left-0.25 sm:left-0.5 top-0.25 sm:top-0.5 text-[#7a4f3a]">
+                      TathirMichil
+                    </span>
+                    <span
+                      className="relative text-tathir-beige 
+                      [text-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_0_#7a4f3a,4px_4px_0_#7a4f3a,5px_5px_0_#7a4f3a,6px_6px_1px_rgba(0,0,0,.1),0_0_5px_rgba(0,0,0,.1),1px_1px_3px_rgba(0,0,0,.3),3px_3px_5px_rgba(0,0,0,.2),5px_5px_10px_rgba(0,0,0,.25),8px_8px_10px_rgba(0,0,0,.2),12px_12px_20px_rgba(0,0,0,.15)] sm:[text-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1),0_0_5px_rgba(0,0,0,.1),2px_2px_3px_rgba(0,0,0,.3),6px_6px_5px_rgba(0,0,0,.2),10px_10px_10px_rgba(0,0,0,.25),15px_15px_10px_rgba(0,0,0,.2),20px_20px_20px_rgba(0,0,0,.15)]"
+                    >
                       TathirMichil
                     </span>
                   </span>
@@ -76,36 +98,111 @@ const Hero = () => {
 
         <AnimatedSection>
           <div className="flex flex-col gap-4 items-center justify-center mt-8 w-full max-w-md mx-auto sm:max-w-none sm:flex-row">
-            <button onClick={() => router.push('/login')} className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-tathir-dark-green text-tathir-beige font-bold rounded-xl border-4 border-tathir-light-green hover:brightness-110 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden shadow-xl">
-              <span className="flex items-center justify-center uppercase relative z-10 text-base sm:text-lg">
-                Login
-                <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:translate-x-1 transition-transform duration-300" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-tathir-light-green to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            </button>
+            {user ? (
+              // Logged in user buttons
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-tathir-maroon text-tathir-beige font-bold rounded-xl border-4 border-tathir-brown hover:brightness-110 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden shadow-xl"
+              >
+                <span className="flex items-center justify-center uppercase relative z-10 text-base sm:text-lg">
+                  Logout
+                  <LogOut className="ml-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-tathir-brown/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              </button>
+            ) : (
+              // Not logged in user buttons
+              <>
+                <button
+                  onClick={() => router.push("/login")}
+                  className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-tathir-dark-green text-tathir-beige font-bold rounded-xl border-4 border-tathir-light-green hover:brightness-110 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden shadow-xl"
+                >
+                  <span className="flex items-center justify-center uppercase relative z-10 text-base sm:text-lg">
+                    Login
+                    <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:translate-x-1 transition-transform duration-300" />
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-tathir-light-green to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                </button>
 
-            <button onClick={() => router.push('/signup')} className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-tathir-light-green text-tathir-beige font-bold rounded-xl border-4 border-tathir-dark-green hover:brightness-110 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden shadow-xl">
-              <span className="flex items-center justify-center uppercase relative z-10 text-base sm:text-lg">
-                Sign Up
-                <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:translate-x-1 transition-transform duration-300" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-tathir-dark-green/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            </button>
+                <button
+                  onClick={() => router.push("/signup")}
+                  className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-tathir-light-green text-tathir-beige font-bold rounded-xl border-4 border-tathir-dark-green hover:brightness-110 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden shadow-xl"
+                >
+                  <span className="flex items-center justify-center uppercase relative z-10 text-base sm:text-lg">
+                    Sign Up
+                    <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:translate-x-1 transition-transform duration-300" />
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-tathir-dark-green/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                </button>
+              </>
+            )}
           </div>
         </AnimatedSection>
       </div>
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div
+            className="bg-tathir-dark-green border-4 border-tathir-maroon p-6 sm:p-8 rounded-lg max-w-[90%] sm:max-w-md w-full"
+            style={{
+              boxShadow:
+                "8px 8px 0 0 rgb(from var(--color-tathir-maroon) r g b / 0.5)",
+            }}
+          >
+            <h3 className="text-xl sm:text-2xl font-bold text-tathir-cream text-center mb-6 sm:mb-8">
+              Are you sure you want to logout?
+            </h3>
+            <div className="flex justify-center gap-3 sm:gap-4">
+              <button
+                className="px-4 sm:px-6 py-2 bg-tathir-maroon text-tathir-cream rounded-lg cursor-pointer
+                              hover:bg-tathir-brown transition-colors duration-300 border-2 border-transparent
+                              hover:border-tathir-cream active:scale-95"
+                onClick={async () => {
+                  try {
+                    setShowLogoutModal(false);
+                    if (logOut) {
+                      await logOut();
+                      // Force a page reload to ensure clean state
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    console.error("Logout failed:", error);
+                    setShowLogoutModal(false);
+                  }
+                }}
+              >
+                Yes, Logout
+              </button>
+              <button
+                className="px-4 sm:px-6 py-2 bg-tathir-cream text-tathir-maroon rounded-lg cursor-pointer
+                              hover:bg-tathir-beige transition-colors duration-300 border-2 border-transparent
+                              hover:border-tathir-maroon active:scale-95"
+                onClick={() => setShowLogoutModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
 
 // AnimatedSection wrapper with enhanced scroll animation
-const AnimatedSection: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AnimatedSection: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 translate-y-0 rotate-0 scale-100' : 'opacity-0 translate-y-12 -rotate-2 scale-95'
-        }`}
+      className={`transition-all duration-1000 ease-out ${
+        isVisible
+          ? "opacity-100 translate-y-0 rotate-0 scale-100"
+          : "opacity-0 translate-y-12 -rotate-2 scale-95"
+      }`}
     >
       {children}
     </div>

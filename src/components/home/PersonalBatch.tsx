@@ -66,21 +66,21 @@ const PersonalBatch = () => {
         </AnimatedSection>
 
         <AnimatedSection>
-          <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:grid-cols-3 mb-8 sm:mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
             {features.map((feature, idx) => (
               <div
                 key={idx}
                 className="group bg-tathir-beige rounded-xl p-6 sm:p-8 transform hover:scale-[1.02] transition-all duration-300 relative
                   [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_0_#7a4f3a,4px_4px_0_#7a4f3a,5px_5px_0_#7a4f3a,6px_6px_1px_rgba(0,0,0,.1)] sm:[box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]"
               >
-                <div className="flex flex-col items-start">
+                <div className="flex flex-col items-start h-full">
                   <div className="bg-tathir-maroon bg-opacity-20 backdrop-blur-sm p-3 sm:p-4 rounded-lg mb-4 sm:mb-6 group-hover:bg-opacity-30 transition-colors duration-300">
                     <div className="text-tathir-beige">{feature.icon}</div>
                   </div>
-                  <h4 className="text-lg sm:text-xl uppercase font-bold text-tathir-maroon mb-3 sm:mb-4">
+                  <h4 className="text-lg sm:text-xl lg:text-2xl uppercase font-bold text-tathir-maroon mb-3 sm:mb-4">
                     {feature.title}
                   </h4>
-                  <p className="text-base sm:text-lg lg:text-xl jersey-10-regular leading-relaxed">
+                  <p className="text-sm sm:text-base lg:text-lg jersey-10-regular leading-relaxed text-tathir-brown flex-grow">
                     {feature.description}
                   </p>
                 </div>

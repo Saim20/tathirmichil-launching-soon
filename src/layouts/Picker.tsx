@@ -3,21 +3,16 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { AuthContext } from "../lib/auth/auth-provider";
-import Dashboard from "./Dashboard";
 import HomeLayout from "./HomeLayout";
-import AdminLayout from "./AdminLayout";
 import LoadingScreen from "../components/shared/LoadingScreen";
 import {
   isStudentPath,
   isTestPagePath,
   isAdminPath,
   isTestListPath,
-  isPrivatePath,
   isPremiumPath,
-  isPassingRequiredPath,
   isLoginRoute,
 } from "../lib/auth/path-utils";
-import TestLayout from "./TestLayout";
 
 // Memoized tips array (moved outside component to prevent recreating)
 const STUDY_TIPS = [
@@ -85,11 +80,10 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
     isTestList: isTestListPath(pathname),
     isAdmin: isAdminPath(pathname),
     isPremium: isPremiumPath(pathname),
-    isPassingRequired: isPassingRequiredPath(pathname),
     isLogin: isLoginRoute(pathname),
   }), [pathname]);
 
-  const { isStudent, isTest, isTestList, isAdmin, isPremium, isPassingRequired, isLogin } = routeChecks;
+  const { isStudent, isTest, isTestList, isAdmin, isPremium, isLogin } = routeChecks;
 
   // Prevent state updates on unmounted component
   const isMounted = useRef(true);
@@ -131,6 +125,10 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
 
   // * Early redirect check - happens before any rendering to prevent page flash
   const shouldRedirect = useMemo(() => {
+    // Don't calculate redirects while already redirecting to prevent infinite loops
+    if (isRedirecting) {
+      return null;
+    }
     
     // Only check redirects when auth data is ready AND stable
     if (profileChecking || !profileInitialized) {
@@ -175,11 +173,6 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
       return { path: `/student`, shouldReplace: true };
     }
 
-    // Assessment test check (non-admin only)
-    if (role !== "admin" && !isPassed && !isTestList) {
-      return { path: `/test/assessment`, shouldReplace: true };
-    }
-
     // Subscription check (non-admin premium routes only)
     if (role !== "admin" && !isSubscribed && isPremium) {
       const redirectPath = `/batch?redirect=${encodeURIComponent(pathname)}`;
@@ -187,14 +180,9 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
       return { path: redirectPath, shouldReplace: false };
     }
 
-    // Passing requirement check
-    if (!isPassed && isPassingRequired) {
-
-      return { path: `/test/assessment`, shouldReplace: true };
-    }
-
     return null;
   }, [
+    isRedirecting, // This prevents infinite loops
     profileChecking,
     profileInitialized,
     user,
@@ -205,42 +193,42 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
     isAdmin,
     isTest,
     isPremium,
-    isPassingRequired,
   ]);
 
   // Execute redirect immediately if needed
   useEffect(() => {
-    if (shouldRedirect && shouldRedirect.path !== pathname && !isRedirecting) {
+    if (shouldRedirect && shouldRedirect.path !== pathname && !isRedirecting && isMounted.current) {
       setIsRedirecting(true);
       
-      // Small delay to prevent race conditions with state updates
-      const timeoutId = setTimeout(() => {
-        try {
-          if (shouldRedirect.shouldReplace) {
-            router.replace(shouldRedirect.path);
-          } else {
-            router.push(shouldRedirect.path);
-          }
-        } catch (error) {
-          console.error("❌ Navigation error:", error);
+      // Execute redirect immediately without timeout
+      try {
+        if (shouldRedirect.shouldReplace) {
+          router.replace(shouldRedirect.path);
+        } else {
+          router.push(shouldRedirect.path);
+        }
+      } catch (error) {
+        console.error("Navigation error:", error);
+        if (isMounted.current) {
           setIsRedirecting(false);
         }
-      }, 0);
-
-      return () => {
-        clearTimeout(timeoutId);
-      };
+      }
     }
   }, [shouldRedirect, pathname, router, isRedirecting]);
 
-  // Reset redirecting state when pathname changes (redirect completed)
+  // Safety net: Reset redirecting state after a timeout to prevent getting stuck
   useEffect(() => {
+    if (isRedirecting) {
+      const timeoutId = setTimeout(() => {
+        if (isMounted.current && isRedirecting) {
+          console.log("⚠️ Resetting redirect state due to timeout");
+          setIsRedirecting(false);
+        }
+      }, 1000); // 1 second timeout
 
-    if (isRedirecting && pathname !== undefined) {
-
-      setIsRedirecting(false);
+      return () => clearTimeout(timeoutId);
     }
-  }, [pathname, isRedirecting]);
+  }, [isRedirecting]);
 
   // Determine if we should show loading screen
   const shouldShowLoading = useMemo(() => {
@@ -250,7 +238,6 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
       loading ||
       profileChecking ||
       isRedirecting ||
-      !profileInitialized ||
       needsAuth
     );
     return result;
@@ -273,36 +260,6 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
   if (shouldRedirect) {
 
     return <LoadingScreen tipText="" isRedirecting={true} />;
-  }
-
-  // Render TestLayout for diagnostic and practice tests
-  if (isTest && user) {
-
-    return (
-      <div className="transition-opacity duration-200 ease-in-out">
-        <TestLayout>{children}</TestLayout>
-      </div>
-    );
-  }
-
-  // Render Dashboard for regular student dashboard
-  if ((isStudent || isTestList) && user) {
-
-    return (
-      <div className="transition-opacity duration-200 ease-in-out">
-        <Dashboard>{children}</Dashboard>
-      </div>
-    );
-  }
-
-  // Render AdminLayout for admin dashboard
-  if (isAdmin && user && !loading) {
-
-    return (
-      <div className="transition-opacity duration-200 ease-in-out">
-        <AdminLayout>{children}</AdminLayout>
-      </div>
-    );
   }
 
   // For non-dashboard routes, use HomeLayout

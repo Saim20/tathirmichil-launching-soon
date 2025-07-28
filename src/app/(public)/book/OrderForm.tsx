@@ -306,12 +306,12 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
               </div>
               <div className="flex justify-between items-center text-sm text-tathir-brown mt-1">
                 <span>Delivery</span>
-                <span className="text-tathir-dark-green font-bold">FREE</span>
+                <span className="text-tathir-dark-green font-bold">~ ৳ 100</span>
               </div>
               <hr className="my-2 border-tathir-brown/20" />
               <div className="flex justify-between items-center font-bold text-tathir-dark-green">
                 <span>Total (Cash on Delivery)</span>
-                <span>৳ {price.toLocaleString()}</span>
+                <span>~ ৳ {(price + 100).toLocaleString()}</span>
               </div>
             </div>
           </div>

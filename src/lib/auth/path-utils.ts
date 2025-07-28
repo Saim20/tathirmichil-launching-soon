@@ -17,6 +17,7 @@ const PREMIUM_TEST_ROUTES = [
 
 const STUDENT_ROUTES = [
   '/student',
+  '/form',
   '/complete-profile',
   ...TEST_LIST_ROUTES,
 ];

@@ -81,7 +81,7 @@ export async function middleware(req: NextRequest) {
                     if (redirectUrl) {
                         return NextResponse.redirect(new URL(redirectUrl, req.url));
                     } else {
-                        return NextResponse.redirect(new URL('/student', req.url));
+                        return NextResponse.redirect(new URL('/', req.url));
                     }
                 } else if (redirectUrl) {
                     return NextResponse.redirect(new URL(redirectUrl, req.url));

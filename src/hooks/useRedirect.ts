@@ -17,8 +17,8 @@ export function useRedirect() {
             console.log("Using redirect URL:", redirect);
             router.push(redirect);
         } else {
-            console.log("Using fallback to /student");
-            router.push("/student");
+            console.log("Using fallback to /");
+            router.push("/");
         }
     }, [searchParams, router]);
 

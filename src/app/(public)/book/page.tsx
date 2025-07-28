@@ -327,13 +327,13 @@ export default function BookPage() {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 flex-grow">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 flex-grow">
                 <div
                   className="text-center p-4 bg-tathir-cream rounded-lg 
                   [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_1px_rgba(0,0,0,.1)]"
                 >
                   <div
-                    className={`text-2xl font-bold text-tathir-maroon ${bloxat.className}`}
+                    className={`text-2xl sm:text-xl md:text-2xl font-bold text-tathir-maroon ${bloxat.className}`}
                   >
                     {bookDetails.pages}
                   </div>
@@ -346,7 +346,7 @@ export default function BookPage() {
                   [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_1px_rgba(0,0,0,.1)]"
                 >
                   <div
-                    className={`text-2xl font-bold text-tathir-maroon ${bloxat.className}`}
+                    className={`text-2xl sm:text-xl md:text-2xl font-bold text-tathir-maroon ${bloxat.className}`}
                   >
                     {bookDetails.language}
                   </div>
@@ -356,10 +356,11 @@ export default function BookPage() {
                 </div>
                 <div
                   className="text-center p-4 bg-tathir-cream rounded-lg 
-                  [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_1px_rgba(0,0,0,.1)]"
+                  [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_1px_rgba(0,0,0,.1)]
+                  sm:col-span-2 md:col-span-1"
                 >
                   <div
-                    className={`text-2xl font-bold text-tathir-maroon ${bloxat.className}`}
+                    className={`text-2xl sm:text-xl md:text-2xl font-bold text-tathir-maroon ${bloxat.className}`}
                   >
                     {bookDetails.dimensions}
                   </div>

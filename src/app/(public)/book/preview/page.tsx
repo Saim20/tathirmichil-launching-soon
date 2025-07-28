@@ -59,16 +59,11 @@ export default function BookPreviewPage() {
         if (!response.ok) {
           console.error('PDF URL not accessible:', response.status, response.statusText);
         } else {
-          console.log('✅ PDF URL is accessible and ready to load');
           
           // Test if we can actually fetch the PDF content
           try {
             const fullResponse = await fetch("/THE_IBA_BOOK_organized-1-7.pdf");
             const blob = await fullResponse.blob();
-            console.log('✅ PDF content fetched successfully:', {
-              size: blob.size,
-              type: blob.type
-            });
           } catch (contentError) {
             console.error('❌ Failed to fetch PDF content:', contentError);
           }
@@ -98,7 +93,7 @@ export default function BookPreviewPage() {
                 <Home size={16} className="sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-base">Back to Book</span>
               </Link>
-              <div className="text-tathir-cream hidden sm:block">|</div>
+              <div className="text-tathir-cream block">|</div>
               <h1 className="text-sm sm:text-xl font-bold text-tathir-beige truncate">
                 IBA Book Preview
               </h1>
@@ -127,7 +122,7 @@ export default function BookPreviewPage() {
           {!error && (
             <div className="h-full w-full">
               <PDFViewer 
-                fileUrl="/THE_IBA_BOOK_organized-1-7.pdf"
+                fileUrl="/book.pdf"
                 onError={handleError}
               />
             </div>
