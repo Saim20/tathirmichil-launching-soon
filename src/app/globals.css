@@ -1,0 +1,918 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
+
+/* Custom Theme Variables for Tailwind CSS v4 */
+@theme {
+  --color-tathir-light-green: #6ea24a;
+  --color-tathir-dark-green: #3e5e3e;
+  --color-tathir-beige: #d6ccb1;
+  --color-tathir-cream: #c2a47e;
+  --color-tathir-cream-light: #e0d0b5;
+  --color-tathir-brown: #7a4f3a;
+  --color-tathir-maroon: #5a3a2b;
+  --color-tathir-light-gray: #5f6368;
+  --color-tathir-dark-gray: #3a3d40;
+  --color-tathir-gold: #ffd700;
+  --color-tathir-bronze: #cd7f32;
+  --color-tathir-success: #86c06c;
+  --color-tathir-warning: #e6b35e;
+  --color-tathir-error: #d16666;
+  --color-tathir-info: #7cb8ff;
+}
+
+/* Custom breakpoints */
+@tailwind utilities;
+
+@layer utilities {
+  /* Custom xs breakpoint at 475px */
+  @media (min-width: 475px) {
+    .xs\:inline { display: inline; }
+    .xs\:hidden { display: none; }
+    .xs\:block { display: block; }
+    .xs\:flex { display: flex; }
+    .xs\:grid { display: grid; }
+  }
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+.jersey-10-regular {
+  font-family: "Jersey 10", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Pixel Art Aesthetic Classes */
+.pixel-text {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.pixel-shadow {
+  filter: contrast(1.2) brightness(1.1);
+}
+
+.pixel-border {
+  border-radius: 2px;
+  image-rendering: pixelated;
+}
+
+.pixel-card {
+  border-radius: 4px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.pixel-button {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border-radius: 2px;
+  transition: all 0.15s ease-out;
+}
+
+.pixel-button:hover {
+  transform: translateY(-1px);
+}
+
+.pixel-button:active {
+  transform: translateY(1px);
+}
+
+.pixel-button-active {
+  image-rendering: pixelated;
+  border-radius: 2px;
+  transform: translateY(1px);
+}
+
+.pixel-button-large {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border-radius: 4px;
+  transition: all 0.2s ease-out;
+}
+
+.pixel-button-large:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.pixel-button-large:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.pixel-badge {
+  image-rendering: pixelated;
+  border-radius: 2px;
+}
+
+.pixel-bar {
+  image-rendering: pixelated;
+  height: 2px;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Pixel grid animation */
+@keyframes pixelGlow {
+  0%, 100% { 
+    opacity: 0.1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.3; 
+    transform: scale(1.02);
+  }
+}
+
+.pixel-glow {
+  animation: pixelGlow 2s ease-in-out infinite;
+}
+
+/* Enhanced pixel shadows for 8-bit feel */
+.pixel-shadow-deep {
+  box-shadow: 
+    1px 1px 0 var(--color-tathir-maroon),
+    2px 2px 0 var(--color-tathir-maroon),
+    3px 3px 0 var(--color-tathir-dark-green),
+    4px 4px 0 var(--color-tathir-dark-green),
+    5px 5px 0 rgba(0,0,0,0.2);
+}
+
+/* Glass Effects */
+.tathir-glass {
+  background: rgb(from var(--color-tathir-dark-green) r g b / 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.tathir-glass-dark {
+  background: rgb(from var(--color-tathir-maroon) r g b / 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Test UI Custom Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes progressPulse {
+  0%, 100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(1.02);
+  }
+}
+
+@keyframes buttonBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes timerPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInFromLeft 0.5s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight 0.5s ease-out;
+}
+
+.animate-progress-pulse {
+  animation: progressPulse 0.3s ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-button-bounce {
+  animation: buttonBounce 0.6s ease;
+}
+
+.animate-timer-pulse {
+  animation: timerPulse 2s infinite;
+}
+
+/* Card Effects */
+.tathir-card-hover {
+  transition: all 0.3s ease;
+}
+
+.tathir-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 0 0 2px var(--color-tathir-dark-gray),
+    0 0 0 4px var(--color-tathir-brown),
+    0 10px 20px -5px rgb(from var(--color-tathir-maroon) r g b / 0.3);
+}
+
+.tathir-card-active:active {
+  transform: translateY(2px);
+  box-shadow: 
+    0 0 0 2px var(--color-tathir-dark-gray),
+    0 0 0 4px var(--color-tathir-brown),
+    0 5px 10px -3px rgb(from var(--color-tathir-maroon) r g b / 0.3);
+}
+
+/* Custom Scrollbar */
+.tathir-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-tathir-maroon) var(--color-tathir-dark-green);
+}
+
+.tathir-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tathir-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-tathir-dark-green);
+  border-radius: 4px;
+}
+
+.tathir-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-tathir-maroon);
+  border-radius: 4px;
+}
+
+.tathir-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tathir-brown);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+.ProseMirror .custom-heading {
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h1 {
+  font-size: 2.25rem !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+}
+
+.ProseMirror h2 {
+  font-size: 1.875rem !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+}
+
+.ProseMirror p {
+  margin-bottom: 1rem;
+  font-weight: 200;
+}
+
+.ProseMirror u {
+  text-decoration: underline !important;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  margin-left: 2rem;
+}
+
+.ProseMirror ul li {
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  margin-left: 2rem;
+}
+
+.ProseMirror ol li {
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-content {
+  color: var(--color-tathir-maroon);
+}
+
+.tiptap-content p {
+  text-align: justify;
+  font-size: 20px;
+  font-weight: 100;
+  margin-bottom: 1rem;
+}
+
+.tiptap-content h1 {
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 35px;
+  font-weight: 600;
+  color: var(--color-tathir-maroon);
+}
+
+.tiptap-content h2 {
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--color-tathir-maroon);
+}
+
+.tiptap-content ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-bottom: 1rem;
+}
+
+.tiptap-content ul li {
+  font-size: 20px;
+  font-weight: 100;
+  margin-bottom: 0.5rem;
+  color: var(--color-tathir-maroon);
+  line-height: 1.5;
+}
+
+.tiptap-content ol {
+  list-style-type: decimal;
+  padding-left: 20px;
+  margin-bottom: 1rem;
+}
+
+.tiptap-content ol li {
+  font-size: 20px;
+  font-weight: 100;
+  margin-bottom: 0.5rem;
+  color: var(--color-tathir-maroon);
+  line-height: 1.5;
+}
+
+/* Custom test hover effects */
+.test-option-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.test-option-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.test-nav-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.test-nav-button:hover {
+  transform: scale(1.05);
+}
+
+.test-nav-button:active {
+  transform: scale(0.98);
+}
+
+/* Glass morphism effect for test UI */
+.test-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.test-glass-dark {
+  background: rgb(from var(--color-tathir-dark-green) r g b / 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive background images */
+.responsive-bg {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top;
+}
+
+/* Mobile devices (up to 768px) */
+.responsive-bg {
+  background-image: url('/pixel-bg.webp');
+}
+
+/* Tablet and small desktop (768px and up) */
+@media (min-width: 768px) {
+  .responsive-bg {
+    background-image: url('/pixel-bg.webp');
+  }
+}
+
+/* Large desktop (1024px and up) */
+@media (min-width: 1024px) {
+  .responsive-bg {
+    background-image: url('/pixel-bg.webp');
+  }
+}
+
+/* Mobile-first improvements */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure proper touch targets on mobile */
+button, 
+a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent text from being too small on mobile */
+@media (max-width: 640px) {
+  html {
+    font-size: 16px;
+  }
+  
+  /* Ensure readable text sizes */
+  .text-xs { font-size: 0.875rem; }
+  .text-sm { font-size: 1rem; }
+  .text-base { font-size: 1.125rem; }
+  .text-lg { font-size: 1.25rem; }
+}
+
+/* Improve spacing on very small screens */
+@media (max-width: 375px) {
+  .px-4 { padding-left: 1rem; padding-right: 1rem; }
+  .px-6 { padding-left: 1.25rem; padding-right: 1.25rem; }
+}
+
+/* Blog Content HTML/Markdown Styling */
+.blog-content {
+  /* Typography */
+  line-height: 1.7;
+  color: var(--color-tathir-brown);
+}
+
+/* Headers - consistent for both HTML and Markdown */
+.blog-content h1,
+.blog-content h2,
+.blog-content h3,
+.blog-content h4,
+.blog-content h5,
+.blog-content h6 {
+  color: var(--color-tathir-dark-green);
+  font-weight: bold;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.blog-content h1 { font-size: 2rem; }
+.blog-content h2 { font-size: 1.75rem; }
+.blog-content h3 { font-size: 1.5rem; }
+.blog-content h4 { font-size: 1.25rem; }
+.blog-content h5 { font-size: 1.125rem; }
+.blog-content h6 { font-size: 1rem; }
+
+/* Paragraphs */
+.blog-content p {
+  margin-bottom: 1em;
+  line-height: 1.7;
+}
+
+/* Lists - enhanced for Markdown */
+.blog-content ul,
+.blog-content ol {
+  margin: 1em 0;
+  padding-left: 1.5em;
+}
+
+.blog-content li {
+  margin-bottom: 0.5em;
+  line-height: 1.6;
+}
+
+/* Nested lists */
+.blog-content ul ul,
+.blog-content ol ol,
+.blog-content ul ol,
+.blog-content ol ul {
+  margin: 0.5em 0;
+}
+
+/* Blockquotes - enhanced for Markdown */
+.blog-content blockquote {
+  border-left: 4px solid var(--color-tathir-dark-green);
+  padding-left: 1rem;
+  margin: 1.5em 0;
+  font-style: italic;
+  background-color: var(--color-tathir-beige);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  position: relative;
+}
+
+.blog-content blockquote p {
+  margin-bottom: 0.5em;
+}
+
+.blog-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Code - enhanced for Markdown */
+.blog-content code {
+  background-color: var(--color-tathir-cream);
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  color: var(--color-tathir-dark-green);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.blog-content pre {
+  background-color: var(--color-tathir-cream);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1em 0;
+  border: 1px solid var(--color-tathir-brown);
+}
+
+.blog-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+/* Links */
+.blog-content a {
+  color: var(--color-tathir-dark-green);
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.blog-content a:hover {
+  color: var(--color-tathir-brown);
+}
+
+/* Emphasis */
+.blog-content strong,
+.blog-content b {
+  font-weight: bold;
+  color: var(--color-tathir-dark-green);
+}
+
+.blog-content em,
+.blog-content i {
+  font-style: italic;
+}
+
+/* Images */
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+  border: 1px solid var(--color-tathir-brown);
+}
+
+/* Tables */
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  border: 1px solid var(--color-tathir-brown);
+}
+
+.blog-content th,
+.blog-content td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-tathir-brown);
+}
+
+.blog-content th {
+  background-color: var(--color-tathir-cream);
+  font-weight: bold;
+  color: var(--color-tathir-dark-green);
+}
+
+/* Horizontal Rules */
+.blog-content hr {
+  border: none;
+  height: 2px;
+  background-color: var(--color-tathir-brown);
+  margin: 2em 0;
+  border-radius: 1px;
+}
+
+/* Markdown-specific enhancements */
+.blog-content del,
+.blog-content s {
+  text-decoration: line-through;
+  color: var(--color-tathir-brown);
+  opacity: 0.7;
+}
+
+/* Task lists (if supported) */
+.blog-content input[type="checkbox"] {
+  margin-right: 0.5em;
+}
+
+.blog-content .task-list-item {
+  list-style: none;
+  margin-left: -1.5em;
+}
+
+/* Definition lists */
+.blog-content dl {
+  margin: 1em 0;
+}
+
+.blog-content dt {
+  font-weight: bold;
+  color: var(--color-tathir-dark-green);
+  margin-top: 1em;
+}
+
+.blog-content dd {
+  margin-left: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Blog Preview Styling */
+.blog-preview {
+  /* Reset some styles that might interfere with preview */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.blog-preview h1,
+.blog-preview h2,
+.blog-preview h3,
+.blog-preview h4,
+.blog-preview h5,
+.blog-preview h6 {
+  font-size: inherit;
+  font-weight: 600;
+  margin: 0;
+  line-height: inherit;
+  color: var(--color-tathir-dark-green);
+}
+
+.blog-preview p {
+  margin: 0;
+  line-height: inherit;
+}
+
+.blog-preview ul,
+.blog-preview ol {
+  margin: 0;
+  padding-left: 1em;
+}
+
+.blog-preview li {
+  margin: 0;
+  line-height: inherit;
+}
+
+.blog-preview strong,
+.blog-preview b {
+  font-weight: 600;
+  color: var(--color-tathir-dark-green);
+}
+
+.blog-preview em,
+.blog-preview i {
+  font-style: italic;
+}
+
+.blog-preview code {
+  background-color: var(--color-tathir-cream);
+  padding: 0.1em 0.2em;
+  border-radius: 0.2rem;
+  font-size: 0.9em;
+}
+
+.blog-preview a {
+  color: var(--color-tathir-dark-green);
+  text-decoration: underline;
+}
+
+/* React PDF Viewer Custom Styles */
+.pdf-viewer-container {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Hide download and print buttons in react-pdf-viewer */
+.rpv-toolbar__item[data-testid="toolbar__download-button"],
+.rpv-toolbar__item[data-testid="toolbar__print-button"],
+.rpv-toolbar__item[aria-label="Download"],
+.rpv-toolbar__item[aria-label="Print"] {
+  display: none !important;
+}
+
+/* Customize react-pdf-viewer theme */
+.rpv-core__viewer {
+  background: var(--color-tathir-beige);
+}
+
+.rpv-toolbar {
+  background: var(--color-tathir-cream) !important;
+  border-bottom: 2px solid var(--color-tathir-brown) !important;
+}
+
+.rpv-toolbar__item {
+  color: var(--color-tathir-maroon) !important;
+}
+
+.rpv-toolbar__item:hover {
+  background: var(--color-tathir-cream-light) !important;
+}
+
+/* Disable text selection in PDF viewer */
+.rpv-core__text-layer {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Disable context menu on PDF pages */
+.rpv-core__page {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Disable drag on PDF images */
+.rpv-core__page img,
+.rpv-core__page canvas {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+}
+
+/* Hide text layer to prevent errors and text selection */
+.rpv-core__text-layer,
+.rpv-core__text-layer * {
+  display: none !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Hide annotation layer for security */
+.rpv-core__annotation-layer,
+.rpv-core__annotation-layer * {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Additional text layer selectors that might exist */
+.textLayer,
+.textLayer *,
+[class*="textLayer"],
+[class*="textLayer"] * {
+  display: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
