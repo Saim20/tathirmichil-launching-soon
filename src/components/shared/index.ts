@@ -21,10 +21,6 @@ export { TabNavigation } from './navigation/TabNavigation';
 export { StatsCard } from './data/StatsCard';
 export { InfoCard } from './data/InfoCard';
 
-// Layout Components (from existing layouts)
-export { default as HomeLayout } from '../../layouts/HomeLayout';
-export { default as Dashboard } from '../../layouts/Dashboard';
-export { default as AdminLayout } from '../../layouts/AdminLayout';
 
 // Other shared components
 export { default as Navbar } from './Navbar';
