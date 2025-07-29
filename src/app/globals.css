@@ -40,7 +40,15 @@ body {
   margin: 0;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  overscroll-behavior: none;
+  height: 100%;
+}
+
+html {
+  overflow-y: auto;
+}
+
+body {
+  overflow-y: auto;
 }
 
 .jersey-10-regular {

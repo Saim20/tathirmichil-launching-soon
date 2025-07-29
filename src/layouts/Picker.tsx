@@ -69,6 +69,7 @@ const getRandomTipIndex = () => Math.floor(Math.random() * STUDY_TIPS.length);
 const Picker = ({ children }: { children: React.ReactNode }) => {
   const [tipIndex, setTipIndex] = useState<number>(0);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [lastRedirectPath, setLastRedirectPath] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, profileChecking, userProfile, profileInitialized } =
@@ -197,24 +198,28 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
 
   // Execute redirect immediately if needed
   useEffect(() => {
-    if (shouldRedirect && shouldRedirect.path !== pathname && !isRedirecting && isMounted.current) {
+    if (shouldRedirect && shouldRedirect.path !== pathname && !isRedirecting && shouldRedirect.path !== lastRedirectPath) {
+      console.log("🔄 Redirecting from", pathname, "to:", shouldRedirect.path);
       setIsRedirecting(true);
+      setLastRedirectPath(shouldRedirect.path);
       
-      // Execute redirect immediately without timeout
-      try {
-        if (shouldRedirect.shouldReplace) {
-          router.replace(shouldRedirect.path);
-        } else {
-          router.push(shouldRedirect.path);
-        }
-      } catch (error) {
-        console.error("Navigation error:", error);
-        if (isMounted.current) {
-          setIsRedirecting(false);
-        }
+      // Execute redirect immediately
+      if (shouldRedirect.shouldReplace) {
+        router.replace(shouldRedirect.path);
+      } else {
+        router.push(shouldRedirect.path);
       }
     }
-  }, [shouldRedirect, pathname, router, isRedirecting]);
+  }, [shouldRedirect, pathname, router, isRedirecting, lastRedirectPath]);
+
+  // Reset redirecting state when we reach the target page
+  useEffect(() => {
+    if (isRedirecting && lastRedirectPath && pathname === lastRedirectPath && isMounted.current) {
+      console.log("✅ Redirect completed to:", pathname);
+      setIsRedirecting(false);
+      setLastRedirectPath(null);
+    }
+  }, [pathname, isRedirecting, lastRedirectPath]);
 
   // Safety net: Reset redirecting state after a timeout to prevent getting stuck
   useEffect(() => {
@@ -223,8 +228,9 @@ const Picker = ({ children }: { children: React.ReactNode }) => {
         if (isMounted.current && isRedirecting) {
           console.log("⚠️ Resetting redirect state due to timeout");
           setIsRedirecting(false);
+          setLastRedirectPath(null);
         }
-      }, 1000); // 1 second timeout
+      }, 2000); // 2 second timeout
 
       return () => clearTimeout(timeoutId);
     }

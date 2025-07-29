@@ -163,8 +163,6 @@ const Hero = () => {
                     setShowLogoutModal(false);
                     if (logOut) {
                       await logOut();
-                      // Force a page reload to ensure clean state
-                      window.location.reload();
                     }
                   } catch (error) {
                     console.error("Logout failed:", error);

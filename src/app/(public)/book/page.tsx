@@ -227,12 +227,50 @@ export default function BookPage() {
                   className="bg-tathir-cream p-6 rounded-lg 
                   [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_1px_rgba(0,0,0,.1)]"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <div
-                        className={`text-3xl font-bold text-tathir-maroon ${bloxat.className}`}
-                      >
-                        ৳ {bookDetails.price.toLocaleString()} + Delivery Charge
+                  <div className="mb-4">
+                    <div
+                      className={`text-3xl font-bold text-tathir-maroon mb-4 ${bloxat.className}`}
+                    >
+                      ৳ {bookDetails.price.toLocaleString()}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <h4 className={`text-lg font-bold text-tathir-maroon ${bloxat.className} flex items-center gap-2`}>
+                        <Truck className="w-5 h-5" />
+                        Delivery Charges
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="bg-tathir-beige p-3 rounded-lg [box-shadow:1px_1px_0_#7a4f3a,2px_2px_1px_rgba(0,0,0,.1)]">
+                          <div className={`text-sm font-bold text-tathir-maroon ${bloxat.className}`}>
+                            Inside Dhaka
+                          </div>
+                          <div className="text-lg font-bold text-tathir-brown jersey-10-regular">
+                            ৳ 90
+                          </div>
+                        </div>
+                        
+                        <div className="bg-tathir-beige p-3 rounded-lg [box-shadow:1px_1px_0_#7a4f3a,2px_2px_1px_rgba(0,0,0,.1)]">
+                          <div className={`text-sm font-bold text-tathir-maroon ${bloxat.className}`}>
+                            Dhaka Suburban
+                          </div>
+                          <div className="text-lg font-bold text-tathir-brown jersey-10-regular">
+                            ৳ 120
+                          </div>
+                        </div>
+                        
+                        <div className="bg-tathir-beige p-3 rounded-lg [box-shadow:1px_1px_0_#7a4f3a,2px_2px_1px_rgba(0,0,0,.1)]">
+                          <div className={`text-sm font-bold text-tathir-maroon ${bloxat.className}`}>
+                            Outside Dhaka
+                          </div>
+                          <div className="text-lg font-bold text-tathir-brown jersey-10-regular">
+                            ৳ 150
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm text-tathir-brown jersey-10-regular leading-relaxed">
+                        <p>• Orders of more than 1 book will lead to higher delivery charges</p>
                       </div>
                     </div>
                   </div>

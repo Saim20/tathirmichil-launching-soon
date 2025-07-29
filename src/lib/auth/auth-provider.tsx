@@ -46,7 +46,7 @@ export default function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileChecking, setProfileChecking] = useState(false);
+  const [profileChecking, setProfileChecking] = useState(true);
   const [profileInitialized, setProfileInitialized] = useState(false);
 
   // Debug logging for state changes
@@ -206,6 +206,9 @@ export default function AuthProvider({
         if (tokenRefreshInterval) {
           clearInterval(tokenRefreshInterval);
         }
+
+        // Clear profile loading state
+        setProfileChecking(false);
         
         // Remove the token cookie via server API
         await fetch("/api/logout", { method: "POST" });

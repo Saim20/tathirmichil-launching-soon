@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { X, Loader2, Copy, User, Phone, Mail, MapPin, Building, StickyNote, Check, Truck } from 'lucide-react';
+import { X, Loader2, Copy, User, Phone, Mail, MapPin, Building, StickyNote, Check, Truck, Plus, Minus, Package } from 'lucide-react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { toast } from 'sonner';
@@ -19,6 +19,9 @@ interface FormData {
   email: string;
   address: string;
   city: string;
+  postalCode: string;
+  quantity: number;
+  deliveryZone: 'inside-dhaka' | 'dhaka-suburban' | 'outside-dhaka';
   notes?: string;
 }
 
@@ -29,6 +32,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
     email: '',
     address: '',
     city: '',
+    postalCode: '',
+    quantity: 1,
+    deliveryZone: 'inside-dhaka',
     notes: '',
   });
 
@@ -36,6 +42,39 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string>('');
+  const [orderSummary, setOrderSummary] = useState<{
+    totalAmount: number;
+    deliveryCharge: number;
+    deliveryZone: string;
+  } | null>(null);
+
+  // Calculate delivery charge based on zone
+  const getDeliveryCharge = (zone: string) => {
+    switch (zone) {
+      case 'inside-dhaka':
+        return 90;
+      case 'dhaka-suburban':
+        return 120;
+      case 'outside-dhaka':
+        return 150;
+      default:
+        return 90;
+    }
+  };
+
+  // Get delivery zone label
+  const getDeliveryZoneLabel = (zone: string) => {
+    switch (zone) {
+      case 'inside-dhaka':
+        return 'Inside Dhaka';
+      case 'dhaka-suburban':
+        return 'Dhaka Suburban';
+      case 'outside-dhaka':
+        return 'Outside Dhaka';
+      default:
+        return 'Inside Dhaka';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +85,11 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
       // Basic validation
       if (!formData.name || !formData.phone || !formData.address || !formData.city) {
         throw new Error('Please fill in all required fields');
+      }
+
+      // Quantity validation
+      if (formData.quantity < 1) {
+        throw new Error('Quantity must be at least 1');
       }
 
       // Phone number validation (Bangladesh format)
@@ -59,16 +103,31 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
         throw new Error('Please enter a valid email address');
       }
 
+      // Calculate total price
+      const totalBookPrice = price * formData.quantity;
+      const deliveryCharge = getDeliveryCharge(formData.deliveryZone);
+      const totalAmount = totalBookPrice + deliveryCharge;
+
       // Create order document
       const orderDoc = await addDoc(collection(db, 'book-orders'), {
         ...formData,
-        price,
+        price: totalBookPrice,
+        unitPrice: price,
+        deliveryCharge: deliveryCharge,
+        deliveryZoneLabel: getDeliveryZoneLabel(formData.deliveryZone),
+        totalAmount: totalAmount,
         status: 'pending',
         createdAt: serverTimestamp(),
-        orderNumber: `BO-${Date.now()}`
+        orderNumber: `BO-${Date.now()}`,
+        deliveryMethod: 'home' // Always home delivery
       });
 
       setOrderId(orderDoc.id);
+      setOrderSummary({
+        totalAmount: totalAmount,
+        deliveryCharge: deliveryCharge,
+        deliveryZone: getDeliveryZoneLabel(formData.deliveryZone)
+      });
       setSuccess(true);
       toast.success('Order placed successfully!');
 
@@ -80,10 +139,20 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError(''); // Clear error when user starts typing
+  };
+
+  const handleQuantityChange = (increment: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      quantity: increment 
+        ? prev.quantity + 1
+        : Math.max(prev.quantity - 1, 1)
+    }));
+    setError('');
   };
 
   if (success) {
@@ -126,6 +195,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                   <li>• We'll call you after we get the book</li>
                   <li>• Pay cash on delivery</li>
                   <li>• Keep your Order ID for reference</li>
+                  {orderSummary && (
+                    <li>• Total amount: ৳{orderSummary.totalAmount.toLocaleString()} ({orderSummary.deliveryZone})</li>
+                  )}
                 </ul>
               </div>
 
@@ -153,9 +225,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
             {/* Close button */}
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                {/* <p className="text-tathir-brown">Cash on Delivery Available</p> */}
+                <p className="text-tathir-brown text-sm">Home Delivery • Cash on Delivery</p>
                 <p className={`text-2xl font-bold text-tathir-dark-green ${bloxat.className}`}>
-                  ৳ {price.toLocaleString()}
+                  ৳ {price.toLocaleString()} per book
                 </p>
               </div>
               <button
@@ -257,6 +329,74 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                 />
               </div>
 
+              {/* Postal Code Field */}
+              <div>
+                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                  <MapPin className="w-4 h-4" />
+                  Postal Code
+                </label>
+                <input
+                  type="text"
+                  name="postalCode"
+                  value={formData.postalCode}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-tathir-brown/20 rounded-lg focus:outline-none focus:border-tathir-dark-green bg-white text-tathir-brown transition-colors"
+                  placeholder="1000 (helps with accurate delivery)"
+                />
+              </div>
+
+              {/* Delivery Zone Field */}
+              <div>
+                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                  <Truck className="w-4 h-4" />
+                  Delivery Zone *
+                </label>
+                <select
+                  name="deliveryZone"
+                  value={formData.deliveryZone}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-tathir-brown/20 rounded-lg focus:outline-none focus:border-tathir-dark-green bg-white text-tathir-brown transition-colors"
+                  required
+                >
+                  <option value="inside-dhaka">Inside Dhaka - ৳90</option>
+                  <option value="dhaka-suburban">Dhaka Suburban - ৳120</option>
+                  <option value="outside-dhaka">Outside Dhaka - ৳150</option>
+                </select>
+                <p className="text-xs text-tathir-brown mt-1">
+                  Choose your delivery area for accurate pricing
+                </p>
+              </div>
+
+              {/* Quantity Field */}
+              <div>
+                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                  <Package className="w-4 h-4" />
+                  Quantity
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border-2 border-tathir-brown/20 rounded-lg bg-white">
+                    <button
+                      type="button"
+                      onClick={() => handleQuantityChange(false)}
+                      disabled={formData.quantity <= 1}
+                      className="p-3 text-tathir-dark-green hover:bg-tathir-cream transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="px-6 py-3 text-tathir-brown font-bold border-x-2 border-tathir-brown/20">
+                      {formData.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleQuantityChange(true)}
+                      className="p-3 text-tathir-dark-green hover:bg-tathir-cream transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Notes Field */}
               <div>
                 <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
@@ -287,7 +427,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                 ) : (
                   <>
                     <Truck className="w-5 h-5" />
-                    Place Order - Cash on Delivery
+                    Place Order - Home Delivery (COD)
                   </>
                 )}
               </button>
@@ -295,23 +435,35 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
             {/* Order Summary */}
             <div className="bg-tathir-cream p-4 rounded-lg border border-tathir-brown/20">
-              <h4 className={`font-bold text-tathir-dark-green mb-2 ${bloxat.className}`}>
+              <h4 className={`font-bold text-tathir-dark-green mb-3 ${bloxat.className}`}>
                 Order Summary:
               </h4>
-              <div className="flex justify-between items-center text-tathir-brown">
-                <span>Complete IBA Guide</span>
-                <span className={`font-bold text-tathir-dark-green ${bloxat.className}`}>
-                  ৳ {price.toLocaleString()}
-                </span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-tathir-brown">
+                  <span>Complete IBA Guide × {formData.quantity}</span>
+                  <span className={`font-bold text-tathir-dark-green ${bloxat.className}`}>
+                    ৳ {(price * formData.quantity).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-tathir-brown">
+                  <span>Delivery ({getDeliveryZoneLabel(formData.deliveryZone)})</span>
+                  <span className="text-tathir-dark-green font-bold">
+                    ৳ {getDeliveryCharge(formData.deliveryZone)}
+                  </span>
+                </div>
+                <hr className="my-2 border-tathir-brown/20" />
+                <div className="flex justify-between items-center font-bold text-tathir-dark-green">
+                  <span>Total (Cash on Delivery)</span>
+                  <span className={bloxat.className}>
+                    ৳ {(price * formData.quantity + getDeliveryCharge(formData.deliveryZone)).toLocaleString()}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-sm text-tathir-brown mt-1">
-                <span>Delivery</span>
-                <span className="text-tathir-dark-green font-bold">~ ৳ 100</span>
-              </div>
-              <hr className="my-2 border-tathir-brown/20" />
-              <div className="flex justify-between items-center font-bold text-tathir-dark-green">
-                <span>Total (Cash on Delivery)</span>
-                <span>~ ৳ {(price + 100).toLocaleString()}</span>
+              
+              <div className="mt-4 p-3 bg-tathir-beige rounded border border-tathir-brown/20">
+                <p className="text-xs text-tathir-brown">
+                  <strong>Note:</strong> For orders with multiple books, delivery charges may be adjusted during confirmation call based on total weight and size.
+                </p>
               </div>
             </div>
           </div>
