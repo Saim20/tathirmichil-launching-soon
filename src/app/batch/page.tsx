@@ -493,7 +493,7 @@ const BatchPage = () => {
             </h2>
             <div className="space-y-8">
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <Link
+                {selectedBatch === "regular" ? (<Link
                   href={`/form`}
                   className={`group px-10 py-5 bg-tathir-maroon text-tathir-beige font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] 
                     [box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]
@@ -504,7 +504,7 @@ const BatchPage = () => {
                     <ChevronRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform duration-300" />
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                </Link>
+                </Link>) : <></>}
                 <Link
                   href="/classes"
                   className={`group px-10 py-5 bg-tathir-beige text-tathir-maroon font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] 
