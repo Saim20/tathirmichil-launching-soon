@@ -7,8 +7,7 @@ import {
   ProgressIndicator,
   SuccessView,
   LoadingView,
-  FormRenderer,
-  FormStatus
+  FormRenderer
 } from "@/components/form";
 
 export default function PersonalBatchFormPage() {
@@ -28,6 +27,7 @@ export default function PersonalBatchFormPage() {
     autoSaveStatus,
     loadSavedData,
     getSavedDataInfo,
+    hasUnsavedChanges,
     handleSubmit,
     setIsEditing,
     setSubmitted,
@@ -35,8 +35,33 @@ export default function PersonalBatchFormPage() {
     goToStep,
     getStepTitle,
     isStepCompleted,
-    completedSteps
+    completedSteps,
+    setCompletedSteps,
+    formData,
+    photoFile,
+    photoPreview
   } = formState;
+
+  // Helper function to check if any saved data exists
+  const hasAnySavedData = () => {
+    const savedDataInfo = getSavedDataInfo();
+    return savedDataInfo.exists && !savedDataInfo.isExpired;
+  };
+
+  // Helper function to restore saved data
+  const restoreSavedData = () => {
+    const savedData = loadSavedData();
+    if (savedData?.formData) {
+      formState.setFormData(savedData.formData);
+      if (savedData.currentStep) {
+        setCurrentStep(savedData.currentStep);
+      }
+      if (savedData.completedSteps) {
+        setCompletedSteps(new Set(savedData.completedSteps));
+      }
+      console.log('🔄 Restored saved data from localStorage');
+    }
+  };
 
   // Show loading view
   if (loading) {
@@ -72,21 +97,12 @@ export default function PersonalBatchFormPage() {
           getStepTitle={getStepTitle}
           isStepCompleted={isStepCompleted}
           completedSteps={completedSteps}
+          formData={formData}
+          photoPreview={photoPreview}
+          photoFile={photoFile}
+          hasUnsavedChanges={hasUnsavedChanges}
+          autoSaveStatus={autoSaveStatus}
         />
-
-        {/* Auto-save Status */}
-        {!submitted && (
-          <FormStatus 
-            autoSaveStatus={autoSaveStatus} 
-            onRestoreData={() => {
-              const savedData = loadSavedData();
-              if (savedData) {
-                formState.setFormData(savedData);
-              }
-            }}
-            hasSavedData={getSavedDataInfo().exists}
-          />
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Current Step Content */}

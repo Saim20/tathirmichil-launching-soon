@@ -7,6 +7,7 @@ import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import CheckboxGroup from "./CheckboxGroup";
 import StepNavigation from "./StepNavigation";
+import { useStepValidation } from "../../hooks/useStepValidation";
 
 interface Step4Props extends FormStepProps, StrugglingAreasProps {}
 
@@ -17,8 +18,9 @@ export default function Step4({
   onNext,
   onPrev,
   strugglingAreas,
-  onStrugglingAreasChange
+  onStrugglingAreasChange,
 }: Step4Props) {
+  const { handleValidationChange, isStepValid } = useStepValidation();
   const subjectAreas = [
     "English",
     "Mathematics", 
@@ -54,15 +56,19 @@ export default function Step4({
           required
           value={formData.prepTimeline || "2-3 months"}
           onChange={(value) => onInputChange("prepTimeline", value)}
+          onValidationChange={handleValidationChange}
           options={timelineOptions}
           errors={errors}
         />
 
         <CheckboxGroup
+          id="strugglingAreas"
           label="Which sections do you struggle with?"
           options={subjectAreas}
+          required
           selectedValues={strugglingAreas}
           onChange={onStrugglingAreasChange}
+          onValidationChange={handleValidationChange}
         />
 
         <FormField
@@ -73,6 +79,7 @@ export default function Step4({
           required
           value={formData.fiveYearsVision || ""}
           onChange={(value) => onInputChange("fiveYearsVision", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Share your long-term goals and aspirations..."
           rows={4}
           errors={errors}
@@ -86,6 +93,7 @@ export default function Step4({
           required
           value={formData.otherPlatforms || ""}
           onChange={(value) => onInputChange("otherPlatforms", value)}
+          onValidationChange={handleValidationChange}
           placeholder="List other coaching centers, online platforms, tutors, etc. You do not need any other coaching or tutor for IBA/BUP preparation."
           rows={3}
           errors={errors}
@@ -99,6 +107,7 @@ export default function Step4({
           required
           value={formData.admissionPlans || ""}
           onChange={(value) => onInputChange("admissionPlans", value)}
+          onValidationChange={handleValidationChange}
           placeholder="List out all options and decisions with some explanation and proper order. This will help me guide you better."
           rows={3}
           errors={errors}
@@ -108,6 +117,7 @@ export default function Step4({
       <StepNavigation
         onNext={onNext}
         onPrev={onPrev}
+        isStepValid={isStepValid()}
         nextLabel="Continue to Additional Info"
         prevLabel="Back to Academic Info"
       />

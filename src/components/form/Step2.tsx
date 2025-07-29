@@ -6,14 +6,16 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
+import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step2({ 
   formData, 
   errors, 
   onInputChange, 
-  onNext,
+  onNext, 
   onPrev
 }: FormStepProps) {
+  const { handleValidationChange, isStepValid } = useStepValidation();
   return (
     <StepContainer>
       <StepHeader
@@ -31,6 +33,7 @@ export default function Step2({
           required
           value={formData.school || ""}
           onChange={(value) => onInputChange("school", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Enter your school name"
           errors={errors}
         />
@@ -42,6 +45,7 @@ export default function Step2({
           required
           value={formData.college || ""}
           onChange={(value) => onInputChange("college", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Enter your college name"
           errors={errors}
         />
@@ -101,6 +105,7 @@ export default function Step2({
             required
             value={formData.academicDescription || ""}
             onChange={(value) => onInputChange("academicDescription", value)}
+            onValidationChange={handleValidationChange}
             placeholder="Share your academic interests, strengths, challenges, and what motivates you to study."
             rows={6}
             errors={errors}
@@ -108,11 +113,12 @@ export default function Step2({
         </div>
       </div>
 
-      <StepNavigation
+            <StepNavigation
         onPrev={onPrev}
         onNext={onNext}
-        nextLabel="Continue to Personal Questions"
-        prevLabel="Previous Step"
+        isStepValid={isStepValid()}
+        nextLabel="Continue to Motivations"
+        prevLabel="Back to Personal Info"
       />
     </StepContainer>
   );

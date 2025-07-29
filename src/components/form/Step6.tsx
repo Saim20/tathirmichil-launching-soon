@@ -6,14 +6,16 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
+import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step6({ 
   formData, 
   errors, 
   onInputChange, 
   onNext,
-  onPrev
+  onPrev,
 }: FormStepProps) {
+  const { handleValidationChange, isStepValid } = useStepValidation();
   return (
     <StepContainer>
       <StepHeader
@@ -32,6 +34,7 @@ export default function Step6({
           required
           value={formData.recentFailure || ""}
           onChange={(value) => onInputChange("recentFailure", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Share a meaningful experience where you faced failure and the lessons learned..."
           rows={5}
           errors={errors}
@@ -45,6 +48,7 @@ export default function Step6({
           required
           value={formData.lastBookVideoArticle || ""}
           onChange={(value) => onInputChange("lastBookVideoArticle", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Tell us about something you recently read/watched that impacted you and why..."
           rows={4}
           errors={errors}
@@ -54,6 +58,7 @@ export default function Step6({
       <StepNavigation
         onNext={onNext}
         onPrev={onPrev}
+        isStepValid={isStepValid()}
         nextLabel="Final Step"
         prevLabel="Back to Commitment"
       />

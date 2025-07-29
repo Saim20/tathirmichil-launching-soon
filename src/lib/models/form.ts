@@ -44,7 +44,8 @@ export interface PersonalBatchFormData {
   // Section 7 - Referral & Timing
   referral: string;
   preferredStartDate: string;
-  preferredTiming: 'Morning' | 'Afternoon' | 'Evening';
+  preferredTiming: string[];
+  preferredBatchType: 'Crash' | 'Regular';
 
   // Metadata
   userId: string;

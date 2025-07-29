@@ -4,34 +4,105 @@ import {
   FaCalendarAlt,
   FaSpinner,
   FaCheckCircle,
-  FaUsers,
   FaClock,
   FaHandshake,
   FaInfoCircle,
 } from "react-icons/fa";
-import { FormStepProps } from "./types";
+import { FormStepProps, PreferredTimingProps, PhotoUploadProps } from "./types";
 import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
+import CheckboxGroup from "./CheckboxGroup";
 import StepNavigation from "./StepNavigation";
+import { useStepValidation } from "../../hooks/useStepValidation";
+
+interface Step7Props extends FormStepProps, PreferredTimingProps, PhotoUploadProps {}
 
 export default function Step7({
   formData,
-  errors,
   onInputChange,
+  onNext,
   onPrev,
+  errors,
   submitting,
-  isLastStep,
-}: FormStepProps) {
+  photoFile,
+  photoPreview,
+  onPhotoChange,
+  preferredTiming,
+  onPreferredTimingChange
+}: Step7Props) {
+  const { handleValidationChange, isStepValid } = useStepValidation();
+  
+  // Custom validation for Step7 that includes all required fields across all steps
+  const isStep7Valid = () => {
+    // Check all required fields across all steps
+    const validationErrors = [];
+
+    // Step 1 - Basic Information (including photo)
+    if (!formData.fullName?.trim()) validationErrors.push("Full name");
+    if (!formData.emailAddress?.trim()) validationErrors.push("Email address");
+    if (!formData.phoneNumber?.trim()) validationErrors.push("Phone number");
+    if (!formData.facebookProfile?.trim()) validationErrors.push("Facebook profile");
+    if (!photoPreview?.trim() && !photoFile) validationErrors.push("Profile picture");
+
+    // Step 2 - Academic Information
+    if (!formData.school?.trim()) validationErrors.push("School");
+    if (!formData.college?.trim()) validationErrors.push("College");
+    if (!formData.group) validationErrors.push("Group");
+    if (!formData.hscBatch) validationErrors.push("HSC batch");
+    if (!formData.academicDescription?.trim()) validationErrors.push("Academic background");
+
+    // Step 3 - Personal Questions
+    if (!formData.personalDescription?.trim()) validationErrors.push("Personal description");
+    if (!formData.whyIBA?.trim()) validationErrors.push("Why IBA");
+    if (!formData.whyApplyingHere?.trim()) validationErrors.push("Why applying here");
+    if (!formData.ifNotIBA?.trim()) validationErrors.push("Expectations");
+
+    // Step 4 - Preparation Details
+    if (!formData.prepTimeline) validationErrors.push("Preparation timeline");
+    if (!formData.strugglingAreas || formData.strugglingAreas.length === 0) {
+      validationErrors.push("Struggling areas");
+    }
+    if (!formData.fiveYearsVision?.trim()) validationErrors.push("Five years vision");
+    if (!formData.otherPlatforms?.trim()) validationErrors.push("Other platforms");
+    if (!formData.admissionPlans?.trim()) validationErrors.push("Admission plans");
+
+    // Step 5 - Commitment
+    if (!formData.stableInternet) validationErrors.push("Internet stability");
+    if (!formData.videoCameraOn) validationErrors.push("Video camera preference");
+    if (!formData.attendClasses) validationErrors.push("Class attendance");
+    if (!formData.activeParticipation) validationErrors.push("Active participation");
+    if (!formData.skipOtherCoachings) validationErrors.push("Other coaching commitment");
+    if (!formData.stickTillExam) validationErrors.push("Exam commitment");
+
+    // Step 6 - Reflection
+    if (!formData.recentFailure?.trim()) validationErrors.push("Recent failure");
+    if (!formData.lastBookVideoArticle?.trim()) validationErrors.push("Last book/video/article");
+
+    // Step 7 - Final Details
+    if (!preferredTiming || preferredTiming.length === 0) {
+      validationErrors.push("Preferred timing");
+    }
+    if (!formData.preferredBatchType) validationErrors.push("Preferred batch type");
+
+    const isValid = validationErrors.length === 0;
+    
+    // Log validation state for debugging
+    if (!isValid) {
+      console.log('Form validation failed. Missing fields:', validationErrors);
+    }
+    
+    return isValid;
+  };
   const timingOptions = [
-    { value: "SatWed7_9PM", label: "Sat & Wed 7-9 PM" },
-    { value: "SunTue7_9PM", label: "Sun & Tue 7-9 PM" },
-    { value: "MonThu7_9PM", label: "Mon & Thu 7-9 PM" },
-    { value: "SatWed10_12PM", label: "Sat & Wed 10-12 PM" },
-    { value: "SunTue10_12PM", label: "Sun & Tue 10-12 PM" },
-    { value: "MonThu10_12PM", label: "Mon & Thu 10-12 PM" },
-    { value: "Flexible", label: "Flexible - Any time" },
-    { value: "None", label: "None" },
+    "Sat & Wed 7-9 PM",
+    "Sun & Tue 7-9 PM", 
+    "Mon & Thu 7-9 PM",
+    "Sat & Wed 10-12 PM",
+    "Sun & Tue 10-12 PM",
+    "Mon & Thu 10-12 PM",
+    "Flexible - Any time",
+    "None"
   ];
 
   return (
@@ -50,6 +121,7 @@ export default function Step7({
           icon={<FaHandshake />}
           value={formData.referral || ""}
           onChange={(value) => onInputChange("referral", value)}
+          onValidationChange={handleValidationChange}
           placeholder='Enter name or write "None"'
           errors={errors}
         />
@@ -60,18 +132,35 @@ export default function Step7({
           icon={<FaCalendarAlt />}
           value={formData.preferredStartDate || ""}
           onChange={(value) => onInputChange("preferredStartDate", value)}
+          onValidationChange={handleValidationChange}
           placeholder='Enter date (e.g., "Next Monday") or "ASAP"'
           errors={errors}
         />
 
-        <FormField
+        <CheckboxGroup
           id="preferredTiming"
-          label="Preferred class timing"
+          label="Preferred class timing (select all that apply)"
+          options={timingOptions}
+          required
+          selectedValues={preferredTiming}
+          onChange={onPreferredTimingChange}
+          onValidationChange={handleValidationChange}
+          tip="Choose all time slots that work for you"
+        />
+
+        <FormField
+          id="preferredBatchType"
+          label="Preferred batch type"
           icon={<FaClock />}
           type="select"
-          value={formData.preferredTiming || "Evening"}
-          onChange={(value) => onInputChange("preferredTiming", value)}
-          options={timingOptions}
+          required
+          value={formData.preferredBatchType || "Regular"}
+          onChange={(value) => onInputChange("preferredBatchType", value)}
+          onValidationChange={handleValidationChange}
+          options={[
+            { value: "Regular", label: "Regular" },
+            { value: "Crash", label: "Crash" }
+          ]}
           errors={errors}
         />
       </div>
@@ -111,6 +200,7 @@ export default function Step7({
         prevLabel="Back to Reflection"
         showSubmit={true}
         submitting={submitting}
+        isStepValid={isStep7Valid()}
         submitLabel={
           submitting ? "Submitting Application..." : "Submit Application"
         }

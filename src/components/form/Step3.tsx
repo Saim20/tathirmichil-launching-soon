@@ -6,14 +6,16 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
+import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step3({ 
   formData, 
   errors, 
   onInputChange, 
   onNext,
-  onPrev
+  onPrev,
 }: FormStepProps) {
+  const { handleValidationChange, isStepValid } = useStepValidation();
   return (
     <StepContainer>
       <StepHeader
@@ -32,6 +34,7 @@ export default function Step3({
           required
           value={formData.personalDescription || ""}
           onChange={(value) => onInputChange("personalDescription", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Share your personality, interests, hobbies, values, dreams, and what makes you unique. Be authentic and let your voice shine through!"
           rows={6}
           errors={errors}
@@ -45,6 +48,7 @@ export default function Step3({
           required
           value={formData.whyIBA || ""}
           onChange={(value) => onInputChange("whyIBA", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Share your motivation for choosing IBA. What draws you to this institution? What are your goals?"
           rows={4}
           errors={errors}
@@ -58,6 +62,7 @@ export default function Step3({
           required
           value={formData.whyApplyingHere || ""}
           onChange={(value) => onInputChange("whyApplyingHere", value)}
+          onValidationChange={handleValidationChange}
           placeholder="What brought you so far?"
           rows={4}
           errors={errors}
@@ -71,6 +76,7 @@ export default function Step3({
           required
           value={formData.ifNotIBA || ""}
           onChange={(value) => onInputChange("ifNotIBA", value)}
+          onValidationChange={handleValidationChange}
           placeholder="Share your expectations, goals, and what you hope to achieve through this program."
           rows={4}
           errors={errors}
@@ -80,6 +86,7 @@ export default function Step3({
       <StepNavigation
         onPrev={onPrev}
         onNext={onNext}
+        isStepValid={isStepValid()}
         nextLabel="Continue to Preferences"
         prevLabel="Back to Academic Info"
       />

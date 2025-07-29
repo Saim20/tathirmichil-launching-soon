@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaSpinner } from "react-icons/fa";
 import { buttonClassName, secondaryButtonClassName } from "./utils";
 
 interface StepNavigationProps {
@@ -14,19 +14,21 @@ interface StepNavigationProps {
   submitting?: boolean;
   submitLabel?: string;
   submitIcon?: React.ReactNode;
+  isStepValid?: boolean;
 }
 
 export default function StepNavigation({
   onPrev,
   onNext,
-  prevLabel = "Previous Step",
-  nextLabel = "Next Step",
+  prevLabel = "Previous",
+  nextLabel = "Next",
   isFirstStep = false,
   isLastStep = false,
   showSubmit = false,
   submitting = false,
   submitLabel = "Submit",
-  submitIcon
+  submitIcon,
+  isStepValid = true,
 }: StepNavigationProps) {
   return (
     <div className="flex justify-between mt-8">
@@ -47,8 +49,11 @@ export default function StepNavigation({
       {showSubmit ? (
         <button
           type="submit"
-          className={`${buttonClassName} flex items-center gap-2`}
-          disabled={submitting}
+          className={`${buttonClassName} flex items-center gap-2 ${
+            !isStepValid ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          disabled={submitting || !isStepValid}
+          title={!isStepValid ? 'Please complete all required fields' : ''}
         >
           {submitIcon}
           {submitLabel}
@@ -57,7 +62,11 @@ export default function StepNavigation({
         <button
           type="button"
           onClick={onNext}
-          className={buttonClassName}
+          className={`${buttonClassName} flex items-center gap-2 ${
+            !isStepValid ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          disabled={submitting || !isStepValid}
+          title={!isStepValid ? 'Please complete all required fields' : ''}
         >
           {nextLabel}
           {!isLastStep && <FaArrowRight />}

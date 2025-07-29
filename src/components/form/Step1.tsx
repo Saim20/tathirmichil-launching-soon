@@ -15,6 +15,8 @@ export default function Step1({
   errors, 
   onInputChange, 
   onNext,
+  onValidationChange,
+  isStepValid,
   photoFile,
   photoPreview,
   onPhotoChange
@@ -31,6 +33,7 @@ export default function Step1({
       <PhotoUpload
         photoPreview={photoPreview}
         onPhotoChange={onPhotoChange}
+        onValidationChange={onValidationChange}
         error={errors.profilePicture}
       />
 
@@ -42,6 +45,7 @@ export default function Step1({
           required
           value={formData.fullName || ""}
           onChange={(value) => onInputChange("fullName", value)}
+          onValidationChange={onValidationChange}
           placeholder="Enter your full name"
           errors={errors}
         />
@@ -54,6 +58,8 @@ export default function Step1({
           type="tel"
           value={formData.phoneNumber || ""}
           onChange={(value) => onInputChange("phoneNumber", value)}
+          onValidationChange={onValidationChange}
+          validatePhone={true}
           placeholder="01XXXXXXXXX"
           errors={errors}
         />
@@ -66,6 +72,8 @@ export default function Step1({
           type="email"
           value={formData.emailAddress || ""}
           onChange={(value) => onInputChange("emailAddress", value)}
+          onValidationChange={onValidationChange}
+          validateEmail={true}
           placeholder="Enter your email address"
           errors={errors}
         />
@@ -78,6 +86,8 @@ export default function Step1({
           type="url"
           value={formData.facebookProfile || ""}
           onChange={(value) => onInputChange("facebookProfile", value)}
+          onValidationChange={onValidationChange}
+          validateFacebook={true}
           placeholder="https://facebook.com/yourprofile"
           errors={errors}
         />
@@ -90,6 +100,7 @@ export default function Step1({
             required
             value={formData.location || ""}
             onChange={(value) => onInputChange("location", value)}
+            onValidationChange={onValidationChange}
             placeholder="e.g. 204, IBA hostel, Green Super Market, Farmgate"
             errors={errors}
           />
@@ -98,6 +109,7 @@ export default function Step1({
 
       <StepNavigation
         onNext={onNext}
+        isStepValid={isStepValid}
         nextLabel="Continue to Academic Info"
         isFirstStep={true}
       />

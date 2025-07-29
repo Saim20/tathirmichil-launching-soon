@@ -6,14 +6,16 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
+import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step5({ 
   formData, 
   errors, 
   onInputChange, 
   onNext,
-  onPrev
+  onPrev,
 }: FormStepProps) {
+  const { handleValidationChange, isStepValid } = useStepValidation();
   const internetOptions = [
     { value: "Yes", label: "Yes - High speed & reliable" },
     { value: "Mostly", label: "Mostly - Occasional issues" },
@@ -73,6 +75,7 @@ export default function Step5({
           required
           value={formData.stableInternet || "Yes"}
           onChange={(value) => onInputChange("stableInternet", value)}
+          onValidationChange={handleValidationChange}
           options={internetOptions}
           errors={errors}
         />
@@ -85,6 +88,7 @@ export default function Step5({
           required
           value={formData.videoCameraOn || "I agree"}
           onChange={(value) => onInputChange("videoCameraOn", value)}
+          onValidationChange={handleValidationChange}
           options={videoOptions}
           errors={errors}
         />
@@ -97,6 +101,7 @@ export default function Step5({
           required
           value={formData.attendClasses || "Always unless emergency"}
           onChange={(value) => onInputChange("attendClasses", value)}
+          onValidationChange={handleValidationChange}
           options={attendanceOptions}
           errors={errors}
         />
@@ -109,6 +114,7 @@ export default function Step5({
           required
           value={formData.activeParticipation || "Sure"}
           onChange={(value) => onInputChange("activeParticipation", value)}
+          onValidationChange={handleValidationChange}
           options={participationOptions}
           errors={errors}
         />
@@ -121,6 +127,7 @@ export default function Step5({
           required
           value={formData.skipOtherCoachings || "Done"}
           onChange={(value) => onInputChange("skipOtherCoachings", value)}
+          onValidationChange={handleValidationChange}
           options={skipCoachingOptions}
           errors={errors}
         />
@@ -133,6 +140,7 @@ export default function Step5({
           required
           value={formData.stickTillExam || "Locked in"}
           onChange={(value) => onInputChange("stickTillExam", value)}
+          onValidationChange={handleValidationChange}
           options={commitmentOptions}
           errors={errors}
         />
@@ -141,6 +149,7 @@ export default function Step5({
       <StepNavigation
         onNext={onNext}
         onPrev={onPrev}
+        isStepValid={isStepValid()}
         nextLabel="Continue to Personality"
         prevLabel="Back to Preparation"
       />

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { FaCheckSquare } from "react-icons/fa";
 import { checkboxClassName, labelClassName, fieldContainerClassName } from "./utils";
 
@@ -8,8 +8,10 @@ interface CheckboxGroupProps {
   options: string[];
   selectedValues: string[];
   onChange: (value: string, checked: boolean) => void;
+  onValidationChange?: (fieldId: string, isValid: boolean, error?: string) => void;
   required?: boolean;
   tip?: string;
+  id?: string;
 }
 
 export default function CheckboxGroup({
@@ -17,9 +19,19 @@ export default function CheckboxGroup({
   options,
   selectedValues,
   onChange,
+  onValidationChange,
   required = false,
-  tip
+  tip,
+  id = "checkboxGroup"
 }: CheckboxGroupProps) {
+  // Validation effect
+  useEffect(() => {
+    if (onValidationChange) {
+      const isValid = !required || selectedValues.length > 0;
+      const error = required && selectedValues.length === 0 ? "Please select at least one option" : undefined;
+      onValidationChange(id, isValid, error);
+    }
+  }, [selectedValues, required, onValidationChange, id]);
   return (
     <div className={fieldContainerClassName}>
       <label className={`${labelClassName} flex items-center gap-2`}>

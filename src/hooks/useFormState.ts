@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "@/lib/auth/auth-provider";
 import { PersonalBatchFormData, FormValidationErrors } from "@/lib/models/form";
@@ -9,7 +9,14 @@ import {
     checkExistingFormSubmission,
 } from "@/lib/apis/forms";
 import { validateForm, validateCurrentStep, getStepWithError } from "@/lib/utils/formValidation";
-import useAutoSave from "@/hooks/useAutoSave";
+import { storage } from "@/lib/firebase/firebase";
+import { ref, deleteObject } from "firebase/storage";
+
+export interface AutoSaveStatus {
+    status: 'idle' | 'saving' | 'saved' | 'error';
+    lastSaved?: Date;
+    error?: string;
+}
 
 export interface UseFormStateReturn {
     // Form data and state
@@ -37,6 +44,8 @@ export interface UseFormStateReturn {
     photoPreview: string;
     setPhotoFile: React.Dispatch<React.SetStateAction<File | null>>;
     setPhotoPreview: React.Dispatch<React.SetStateAction<string>>;
+    currentPhotoUrl: string;
+    isUploadingPhoto: boolean;
 
     // Step navigation
     currentStep: number;
@@ -48,14 +57,16 @@ export interface UseFormStateReturn {
     setExistingFormData: React.Dispatch<React.SetStateAction<PersonalBatchFormData | null>>;
 
     // Auto-save
-    autoSaveStatus: any;
+    autoSaveStatus: AutoSaveStatus;
     loadSavedData: () => any;
     clearSavedData: () => void;
     getSavedDataInfo: () => any;
+    hasUnsavedChanges: boolean;
 
     // Form handlers
     handleInputChange: (field: string, value: any) => void;
     handleStrugglingAreasChange: (area: string, checked: boolean) => void;
+    handlePreferredTimingChange: (timing: string, checked: boolean) => void;
     handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSubmit: (e: React.FormEvent) => Promise<void>;
 
@@ -67,6 +78,7 @@ export interface UseFormStateReturn {
     // Step completion tracking
     isStepCompleted: (step: number) => boolean;
     completedSteps: Set<number>;
+    setCompletedSteps: React.Dispatch<React.SetStateAction<Set<number>>>;
 
     // Validation functions
     validateCurrentStepData: () => boolean;
@@ -76,7 +88,7 @@ export interface UseFormStateReturn {
 }
 
 export const useFormState = (): UseFormStateReturn => {
-    const { user } = useContext(AuthContext) || {};
+    const { user, userProfile } = useContext(AuthContext) || {};
     const router = useRouter();
 
     // Basic state
@@ -89,10 +101,27 @@ export const useFormState = (): UseFormStateReturn => {
     const [submitSuccess, setSubmitSuccess] = useState<string>("");
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string>("");
+    const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string>(""); // Track current uploaded photo URL
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false); // Track photo upload status
     const [errors, setErrors] = useState<FormValidationErrors>({});
 
     // Track completed steps
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+    // Track if we've already loaded existing data in edit mode to prevent overriding user changes
+    const [hasLoadedExistingData, setHasLoadedExistingData] = useState(false);
+
+    // Track if we're currently loading initial data to prevent auto-save conflicts
+    const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
+
+    // Track unsaved changes
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+    // Auto-save status
+    const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>({ status: 'idle' });
+
+    // Auto-save timeout ref
+    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Multi-step form state
     const [currentStep, setCurrentStep] = useState(1);
@@ -113,96 +142,260 @@ export const useFormState = (): UseFormStateReturn => {
         activeParticipation: "Sure",
         skipOtherCoachings: "Done",
         stickTillExam: "Locked in",
-        preferredTiming: "Evening",
+        preferredTiming: [],
+        preferredBatchType: "Regular",
         preferredStartDate: "ASAP",
     });
 
-    // Initialize auto-save hook
-    const { status: autoSaveStatus, loadSavedData, clearSavedData, getSavedDataInfo } = useAutoSave({
-        data: formData,
-        storageKey: `tathir_form_draft_${user?.uid || 'anonymous'}`,
-        delay: 2000, // Save 2 seconds after user stops typing
-        onSave: (data) => {
-            console.log('Form auto-saved successfully');
-        },
-        onLoad: (data) => {
-            console.log('Loaded form data:', data);
-        },
-    });
+    // Direct auto-save implementation
+    const storageKey = `tathir_form_latest_${user?.uid || 'anonymous'}`;
 
-    // Check if user already submitted
+    // Auto-save function
+    const saveDataToLocalStorage = () => {
+        try {
+            const saveData = {
+                formData,
+                currentStep,
+                photoPreview,
+                currentPhotoUrl, // Save the uploaded photo URL
+                completedSteps: Array.from(completedSteps),
+                timestamp: Date.now(),
+                version: '1.2' // Updated version to handle photo URL
+            };
+
+            localStorage.setItem(storageKey, JSON.stringify(saveData));
+
+            const now = new Date();
+            setAutoSaveStatus({
+                status: 'saved',
+                lastSaved: now
+            });
+            setHasUnsavedChanges(false);
+
+        } catch (error) {
+            setAutoSaveStatus({
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+            console.error('Failed to auto-save form:', error);
+        }
+    };
+
+    // Load saved data function
+    const loadSavedData = () => {
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+
+                if (!parsed.formData || !parsed.timestamp) {
+                    console.warn("Invalid saved data structure, removing...");
+                    localStorage.removeItem(storageKey);
+                    return null;
+                }
+
+                const isExpired = Date.now() - parsed.timestamp > 24 * 60 * 60 * 1000;
+
+                if (!isExpired) {
+                    console.log("📂 Loaded saved form data from", new Date(parsed.timestamp).toLocaleString());
+                    return parsed;
+                } else {
+                    console.log("🗑️ Removing expired form data (older than 24 hours)");
+                    localStorage.removeItem(storageKey);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load saved form data:", error);
+            try {
+                localStorage.removeItem(storageKey);
+            } catch (clearError) {
+                console.error("Failed to clear corrupted data:", clearError);
+            }
+        }
+        return null;
+    };
+
+    // Clear saved data function
+    const clearSavedData = () => {
+        try {
+            localStorage.removeItem(storageKey);
+            setAutoSaveStatus({ status: 'idle' });
+        } catch (error) {
+            console.error("Failed to clear saved form data:", error);
+        }
+    };
+
+    // Get saved data info function
+    const getSavedDataInfo = () => {
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return {
+                    exists: true,
+                    timestamp: new Date(parsed.timestamp),
+                    isExpired: Date.now() - parsed.timestamp > 24 * 60 * 60 * 1000
+                };
+            }
+        } catch (error) {
+            console.error("Failed to get saved data info:", error);
+        }
+        return { exists: false };
+    };
+
+    // Set profile picture from user's auth profile if available
+    useEffect(() => {
+        console.log('Profile picture check:', { userProfile: userProfile?.profilePictureUrl, userPhotoURL: user?.photoURL, photoPreview, photoFile });
+        
+        if (userProfile?.profilePictureUrl && !photoPreview && !photoFile) {
+            console.log('Setting initial profile picture from user profile:', userProfile.profilePictureUrl);
+            setPhotoPreview(userProfile.profilePictureUrl);
+            setCurrentPhotoUrl(userProfile.profilePictureUrl);
+        } else if (user?.photoURL && !photoPreview && !photoFile) {
+            console.log('Setting initial profile picture from user auth:', user.photoURL);
+            setPhotoPreview(user.photoURL);
+            setCurrentPhotoUrl(user.photoURL);
+        }
+    }, [user?.photoURL, photoFile, userProfile?.profilePictureUrl, photoPreview]);
+
+    // Auto-save effect - triggers when form data changes
+    useEffect(() => {
+        if (!user?.uid || isLoadingInitialData) return;
+
+        // Clear any existing timeout
+        if (autoSaveTimeoutRef.current) {
+            clearTimeout(autoSaveTimeoutRef.current);
+        }
+
+        // Set status to saving and mark as unsaved
+        setAutoSaveStatus({ status: 'saving' });
+        setHasUnsavedChanges(true);
+
+        // Set timeout for auto-save (1 second after last change)
+        autoSaveTimeoutRef.current = setTimeout(() => {
+            saveDataToLocalStorage();
+        }, 1000);
+
+        // Cleanup timeout on unmount
+        return () => {
+            if (autoSaveTimeoutRef.current) {
+                clearTimeout(autoSaveTimeoutRef.current);
+            }
+        };
+    }, [formData, currentStep, photoPreview, completedSteps, user?.uid, isLoadingInitialData]);
+
+    // Load data on mount - localStorage first (latest edits), then database
     useEffect(() => {
         if (!user?.uid) return;
 
-        const checkSubmission = async () => {
-            setLoading(true);
-            try {
-                const result = await checkExistingFormSubmission(user.uid);
+        console.log('🔄 Starting initial data load for user:', user.uid);
+        let hasLoadedData = false;
 
-                if (result.success && result.data) {
-                    const existingData = result.data.formData!;
-
-                    // Process the existingData to handle Firestore timestamp conversion
-                    const processedData = {
-                        ...existingData,
-                        submittedAt: existingData.submittedAt
-                    };
-
-                    setExistingFormData(processedData);
-                    setSubmitted(true);
-
-                    // Load existing data into form state
-                    setFormData(processedData);
-
-
-
-                    // Set photo preview if available from existing form data
-                    if (processedData.profilePictureUrl) {
-                        console.log('processedData.profilePictureUrl:', processedData.profilePictureUrl);
-                        
-                        setPhotoPreview(processedData.profilePictureUrl);
-                    }
-                }
-            } catch (error) {
-                console.error("Error checking existing submission:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        checkSubmission();
-    }, [user?.uid]);
-
-    // Check for saved draft data on mount
-    useEffect(() => {
-        if (!user?.uid || submitted) return;
-
+        // First, try to load from localStorage (latest edits)
         const savedDataInfo = getSavedDataInfo();
         if (savedDataInfo.exists && !savedDataInfo.isExpired) {
-            // Optionally show a notification about available draft data
-            console.log('Found saved draft data from', savedDataInfo.timestamp);
+            const savedData = loadSavedData();
+            if (savedData?.formData) {
+                console.log('📥 Loading latest edits from localStorage');
+                setFormData(savedData.formData);
+                if (savedData.currentStep) {
+                    setCurrentStep(savedData.currentStep);
+                }
+                if (savedData.completedSteps) {
+                    setCompletedSteps(new Set(savedData.completedSteps));
+                }
+                // Only restore saved photo if it exists and is different from user's profile picture
+                // This prevents overriding the user's profile picture with empty/placeholder values
+                if (savedData.photoPreview && 
+                    savedData.photoPreview !== userProfile?.profilePictureUrl && 
+                    savedData.photoPreview !== user?.photoURL) {
+                    setPhotoPreview(savedData.photoPreview);
+                }
+                if (savedData.currentPhotoUrl) {
+                    setCurrentPhotoUrl(savedData.currentPhotoUrl); // Restore uploaded photo URL
+                }
+                hasLoadedData = true;
+                setHasUnsavedChanges(false); // Data loaded from localStorage is considered saved
+            }
         }
-    }, [user?.uid, submitted, getSavedDataInfo]);
 
-    // When user switches to editing mode, ensure existing form data and profile picture are loaded
+        // If no localStorage data, check database for existing submission
+        if (!hasLoadedData) {
+            const checkSubmission = async () => {
+                setLoading(true);
+                try {
+                    const result = await checkExistingFormSubmission(user.uid);
+
+                    if (result.success && result.data) {
+                        const existingData = result.data.formData!;
+
+                        // Process the existingData to handle Firestore timestamp conversion
+                        const processedData = {
+                            ...existingData,
+                            submittedAt: existingData.submittedAt
+                        };
+
+                        setExistingFormData(processedData);
+                        setSubmitted(true);
+
+                        // Load existing data into form state only if no localStorage data
+                        console.log('📥 Loading data from database (no localStorage found)');
+                        setFormData(processedData);
+
+                        // Set photo preview if available from existing form data
+                        // Only set if it's different from user's profile picture to avoid conflicts
+                        if (processedData.profilePictureUrl?.trim() && 
+                            processedData.profilePictureUrl !== userProfile?.profilePictureUrl && 
+                            processedData.profilePictureUrl !== user?.photoURL) {
+                            setPhotoPreview(processedData.profilePictureUrl);
+                            setCurrentPhotoUrl(processedData.profilePictureUrl); // Track current uploaded URL
+                        } else if (!processedData.profilePictureUrl?.trim()) {
+                            // If no profile picture in database, let the profile picture useEffect handle it
+                            setPhotoPreview("");
+                        }
+                        setHasUnsavedChanges(false); // Data loaded from database is considered saved
+                    }
+                } catch (error) {
+                    console.error("Error checking existing submission:", error);
+                } finally {
+                    setLoading(false);
+                    console.log('✅ Database check complete - enabling auto-save');
+                    setIsLoadingInitialData(false); // Enable auto-save after initial loading
+                }
+            };
+
+            checkSubmission();
+        } else {
+            // Data was loaded from localStorage, no need to check database
+            console.log('✅ Initial data loading complete - enabling auto-save');
+            setIsLoadingInitialData(false);
+        }
+    }, [user?.uid]); // Removed getSavedDataInfo and loadSavedData from dependencies
+
+    // When user switches to editing mode, ensure existing form data and profile picture are loaded (only once)
     useEffect(() => {
-        if (isEditing && existingFormData && !loading) {
+        if (isEditing && existingFormData && !loading && !hasLoadedExistingData) {
             console.log('Switching to edit mode, loading existing data:', existingFormData);
             setFormData(existingFormData);
-            
+
             // Load existing profile picture if available
-            if ((existingFormData as any).profilePictureUrl) {
+            if ((existingFormData as any).profilePictureUrl?.trim()) {
                 setPhotoPreview((existingFormData as any).profilePictureUrl);
+                setCurrentPhotoUrl((existingFormData as any).profilePictureUrl); // Track current uploaded URL
                 console.log('Loaded existing profile picture in edit mode:', (existingFormData as any).profilePictureUrl);
+            } else {
+                // If profilePictureUrl is empty or undefined, ensure photoPreview is empty
+                setPhotoPreview("");
+                console.log('No valid profile picture in existing data, clearing photoPreview');
             }
 
             // Mark all steps as completed if we have existing form data
             const allSteps = new Set<number>();
             for (let i = 1; i <= totalSteps; i++) {
                 const stepErrors = validateCurrentStep(
-                    existingFormData, 
-                    i, 
-                    null, 
+                    existingFormData,
+                    i,
+                    null,
                     (existingFormData as any).profilePictureUrl
                 );
                 if (Object.keys(stepErrors).length === 0) {
@@ -210,11 +403,80 @@ export const useFormState = (): UseFormStateReturn => {
                 }
             }
             setCompletedSteps(allSteps);
+
+            // Mark that we've loaded the data
+            setHasLoadedExistingData(true);
         }
-    }, [isEditing, existingFormData, loading]);
+
+        // Reset the flag when exiting edit mode
+        if (!isEditing && hasLoadedExistingData) {
+            setHasLoadedExistingData(false);
+        }
+    }, [isEditing, existingFormData, loading, hasLoadedExistingData]);
+
+    // Revalidate completed steps when form data changes
+    useEffect(() => {
+        if (!user?.uid || submitted || loading) return;
+
+        // Create a function to validate each step
+        const validateStep = (step: number): boolean => {
+            switch (step) {
+                case 1:
+                    return !!(formData.fullName?.trim() &&
+                        formData.emailAddress?.trim() &&
+                        formData.phoneNumber?.trim() &&
+                        formData.facebookProfile?.trim() &&
+                        (photoPreview?.trim() || photoFile)); // Include photo validation with proper empty string check
+                case 2:
+                    return !!(formData.school?.trim() &&
+                        formData.college?.trim() &&
+                        formData.group &&
+                        formData.hscBatch &&
+                        formData.academicDescription?.trim());
+                case 3:
+                    return !!(formData.personalDescription?.trim() &&
+                        formData.whyIBA?.trim() &&
+                        formData.whyApplyingHere?.trim() &&
+                        formData.ifNotIBA?.trim());
+                case 4:
+                    return !!(formData.prepTimeline &&
+                        formData.strugglingAreas && formData.strugglingAreas.length > 0 &&
+                        formData.fiveYearsVision?.trim() &&
+                        formData.otherPlatforms?.trim() &&
+                        formData.admissionPlans?.trim());
+                case 5:
+                    return !!(formData.stableInternet &&
+                        formData.videoCameraOn &&
+                        formData.attendClasses &&
+                        formData.activeParticipation &&
+                        formData.skipOtherCoachings &&
+                        formData.stickTillExam);
+                case 6:
+                    return !!(formData.recentFailure?.trim() &&
+                        formData.lastBookVideoArticle?.trim());
+                case 7:
+                    return !!(formData.preferredTiming && formData.preferredTiming.length > 0 &&
+                        formData.preferredBatchType);
+                default:
+                    return false;
+            }
+        };
+
+        // Revalidate all completed steps
+        const validSteps = new Set<number>();
+        for (let step = 1; step <= totalSteps; step++) {
+            if (validateStep(step)) {
+                validSteps.add(step);
+            }
+        }
+
+        setCompletedSteps(validSteps);
+    }, [formData, user?.uid, submitted, loading, totalSteps, photoPreview, photoFile]);
 
     const handleInputChange = (field: string, value: any) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
+        setHasUnsavedChanges(true); // Mark as having unsaved changes
+
         // Clear error when user starts typing
         if (errors[field]) {
             setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -237,40 +499,118 @@ export const useFormState = (): UseFormStateReturn => {
         }
     };
 
-    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setPhotoFile(file);
-            const reader = new FileReader();
-            reader.onload = () => setPhotoPreview(reader.result as string);
-            reader.readAsDataURL(file);
+    const handlePreferredTimingChange = (timing: string, checked: boolean) => {
+        const timings = formData.preferredTiming || [];
+        if (checked) {
+            handleInputChange("preferredTiming", [...timings, timing]);
+        } else {
+            handleInputChange(
+                "preferredTiming",
+                timings.filter((t) => t !== timing)
+            );
         }
     };
 
-    // Validate current step only
+    // Helper function to check if URL is Firebase storage URL and extract path
+    const isFirebaseStorageUrl = (url: string): boolean => {
+        return url.includes('firebasestorage.googleapis.com') || url.includes('firebase');
+    };
+
+    // Helper function to delete previous photo from Firebase storage
+    const deletePreviousPhoto = async (photoUrl: string): Promise<void> => {
+        if (!photoUrl || !isFirebaseStorageUrl(photoUrl)) return;
+
+        try {
+            // Extract the path from the URL
+            // Firebase storage URLs have format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{path}?{params}
+            const urlParts = photoUrl.split('/o/');
+            if (urlParts.length > 1) {
+                const pathWithParams = urlParts[1];
+                const path = decodeURIComponent(pathWithParams.split('?')[0]);
+                const photoRef = ref(storage, path);
+                await deleteObject(photoRef);
+                console.log('Successfully deleted previous photo:', path);
+            }
+        } catch (error) {
+            console.error('Error deleting previous photo:', error);
+            // Don't throw error - continue with upload even if deletion fails
+        }
+    };
+
+    const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user?.uid) return;
+
+        setIsUploadingPhoto(true);
+        setHasUnsavedChanges(true);
+
+        try {
+            // Delete previous photo if it exists and is from Firebase storage
+            if (currentPhotoUrl) {
+                await deletePreviousPhoto(currentPhotoUrl);
+            }
+
+            // Upload new photo immediately
+            const uploadResult = await uploadFormPhoto(file, user.uid);
+
+            if (uploadResult.success && uploadResult.data?.photoUrl) {
+                // Update states with new photo
+                setCurrentPhotoUrl(uploadResult.data.photoUrl);
+                setPhotoPreview(uploadResult.data.photoUrl);
+                setPhotoFile(file); // Keep file reference for form data
+
+                console.log('Photo uploaded successfully:', uploadResult.data.photoUrl);
+
+                // Trigger auto-save since we have a new photo URL
+                setAutoSaveStatus({ status: 'saving' });
+
+                // Clear any previous auto-save timeout
+                if (autoSaveTimeoutRef.current) {
+                    clearTimeout(autoSaveTimeoutRef.current);
+                }
+
+                // Save to localStorage immediately with new photo URL
+                autoSaveTimeoutRef.current = setTimeout(() => {
+                    saveDataToLocalStorage();
+                    setAutoSaveStatus({
+                        status: 'saved',
+                        lastSaved: new Date()
+                    });
+                }, 500); // Short delay for immediate save
+            } else {
+                throw new Error(uploadResult.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Error uploading photo:', error);
+            setAutoSaveStatus({
+                status: 'error',
+                error: 'Failed to upload photo'
+            });
+
+            // Still set preview for user feedback, but don't update currentPhotoUrl
+            const reader = new FileReader();
+            reader.onload = () => setPhotoPreview(reader.result as string);
+            reader.readAsDataURL(file);
+            setPhotoFile(file);
+        } finally {
+            setIsUploadingPhoto(false);
+        }
+    };
+
+    // Validate current step - simplified since validation is now handled by components
     const validateCurrentStepData = (): boolean => {
-        const stepErrors = validateCurrentStep(
-            formData, 
-            currentStep, 
-            photoFile, 
-            photoPreview || existingFormData?.profilePictureUrl
-        );
-        setErrors(stepErrors);
-        return Object.keys(stepErrors).length === 0;
+        // Always return true since validation is handled by form field components
+        // This function is kept for backwards compatibility
+        return true;
     };
 
-    // Check if a specific step is completed (has valid data)
+    // Check if a specific step is completed - simplified
     const isStepCompleted = (step: number): boolean => {
-        const stepErrors = validateCurrentStep(
-            formData, 
-            step, 
-            photoFile, 
-            photoPreview || existingFormData?.profilePictureUrl
-        );
-        return Object.keys(stepErrors).length === 0;
+        // Check if step is in completed steps set
+        return completedSteps.has(step);
     };
 
-    // Navigation functions
+    // Enhanced navigation functions with auto-save
     const nextStep = () => {
         if (validateCurrentStepData()) {
             // Mark current step as completed
@@ -286,18 +626,9 @@ export const useFormState = (): UseFormStateReturn => {
     };
 
     const goToStep = (step: number) => {
-        // Allow navigation to:
-        // 1. Previous steps (step <= currentStep)
-        // 2. Completed steps (even if they're ahead)
-        // 3. Next step if current step is valid
-        if (step <= currentStep || completedSteps.has(step) || (step === currentStep + 1 && validateCurrentStepData())) {
-            // If moving forward and current step is valid, mark it as completed
-            if (step > currentStep && validateCurrentStepData()) {
-                setCompletedSteps(prev => new Set([...prev, currentStep]));
-            }
-            setCurrentStep(step);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        // Allow free navigation to all steps
+        setCurrentStep(step);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // Get step title for navigation
@@ -324,29 +655,64 @@ export const useFormState = (): UseFormStateReturn => {
         setSubmitSuccess("");
         console.log("Form data before submission:", formData);
 
-        // Validate all form data (not just current step)
-        const validationErrors = validateForm(formData);
-        setErrors(validationErrors);
+        // Comprehensive validation before submission
+        const validationErrors: string[] = [];
 
-        console.log("Validation errors:", validationErrors);
+        // Step 1 - Basic Information (photo is handled separately)
+        if (!formData.fullName?.trim()) validationErrors.push("Full name is required");
+        if (!formData.emailAddress?.trim()) validationErrors.push("Email address is required");
+        if (!formData.phoneNumber?.trim()) validationErrors.push("Phone number is required");
+        if (!formData.facebookProfile?.trim()) validationErrors.push("Facebook profile is required");
+        if (!photoPreview && !photoFile) validationErrors.push("Profile picture is required");
 
-        if (Object.keys(validationErrors).length > 0) {
-            // Find which step has the first error and navigate to it
-            const errorStep = getStepWithError(validationErrors, totalSteps);
-            setCurrentStep(errorStep);
+        // Step 2 - Academic Information
+        if (!formData.school?.trim()) validationErrors.push("School is required");
+        if (!formData.college?.trim()) validationErrors.push("College is required");
+        if (!formData.group) validationErrors.push("Group is required");
+        if (!formData.hscBatch) validationErrors.push("HSC batch is required");
+        if (!formData.academicDescription?.trim()) validationErrors.push("Academic background is required");
 
-            // Scroll to first error
-            const firstErrorField = Object.keys(validationErrors)[0];
-            setTimeout(() => {
-                const element = document.getElementById(firstErrorField);
-                element?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 100);
+        // Step 3 - Personal Questions
+        if (!formData.personalDescription?.trim()) validationErrors.push("Personal description is required");
+        if (!formData.whyIBA?.trim()) validationErrors.push("Why IBA question is required");
+        if (!formData.whyApplyingHere?.trim()) validationErrors.push("Why applying here question is required");
+        if (!formData.ifNotIBA?.trim()) validationErrors.push("Expectations question is required");
 
-            setSubmitError(
-                "Please correct the errors highlighted above and try again."
-            );
+        // Step 4 - Preparation Details
+        if (!formData.prepTimeline) validationErrors.push("Preparation timeline is required");
+        if (!formData.strugglingAreas || formData.strugglingAreas.length === 0) {
+            validationErrors.push("At least one struggling area must be selected");
+        }
+        if (!formData.fiveYearsVision?.trim()) validationErrors.push("Five years vision is required");
+        if (!formData.otherPlatforms?.trim()) validationErrors.push("Other platforms information is required");
+        if (!formData.admissionPlans?.trim()) validationErrors.push("Admission plans are required");
+
+        // Step 5 - Commitment
+        if (!formData.stableInternet) validationErrors.push("Internet stability selection is required");
+        if (!formData.videoCameraOn) validationErrors.push("Video camera preference is required");
+        if (!formData.attendClasses) validationErrors.push("Class attendance commitment is required");
+        if (!formData.activeParticipation) validationErrors.push("Participation commitment is required");
+        if (!formData.skipOtherCoachings) validationErrors.push("Other coaching commitment is required");
+        if (!formData.stickTillExam) validationErrors.push("Exam commitment is required");
+
+        // Step 6 - Reflection
+        if (!formData.recentFailure?.trim()) validationErrors.push("Recent failure reflection is required");
+        if (!formData.lastBookVideoArticle?.trim()) validationErrors.push("Last book/video/article information is required");
+
+        // Step 7 - Final Details
+        if (!formData.preferredTiming || formData.preferredTiming.length === 0) {
+            validationErrors.push("At least one preferred timing must be selected");
+        }
+        if (!formData.preferredBatchType) validationErrors.push("Preferred batch type is required");
+
+        // If there are validation errors, show them and don't submit
+        if (validationErrors.length > 0) {
+            setSubmitError(`Please complete the following required fields:\n• ${validationErrors.join('\n• ')}`);
+            setSubmitting(false);
             return;
         }
+
+        console.log("Form data validation passed, proceeding with submission:", formData);
 
         setSubmitting(true);
 
@@ -356,17 +722,8 @@ export const useFormState = (): UseFormStateReturn => {
                 throw new Error("You must be logged in to submit the form");
             }
 
-            // Upload photo if provided (this will update user's profile picture)
-            if (photoFile && user?.uid) {
-                setSubmitSuccess("Uploading photo...");
-                const photoResult = await uploadFormPhoto(photoFile, user.uid);
-                if (!photoResult.success) {
-                    throw new Error(
-                        "Failed to upload photo: " + (photoResult.error || "Unknown error")
-                    );
-                }
-                setSubmitSuccess("Photo uploaded successfully. Submitting form...");
-            }
+            // Photo is already uploaded immediately when selected, so we skip photo upload here
+            // The currentPhotoUrl contains the uploaded photo URL if available
 
             // Submit or update form data
             const submitData: PersonalBatchFormData = {
@@ -391,8 +748,9 @@ export const useFormState = (): UseFormStateReturn => {
                 setSubmitSuccess(successMessage);
                 setExistingFormData(submitData);
 
-                // Clear auto-saved draft data since form is now successfully submitted
+                // Clear auto-saved data since form is now successfully submitted
                 clearSavedData();
+                setHasUnsavedChanges(false);
 
                 setTimeout(() => {
                     setSubmitted(true);
@@ -437,6 +795,8 @@ export const useFormState = (): UseFormStateReturn => {
         photoPreview,
         setPhotoFile,
         setPhotoPreview,
+        currentPhotoUrl,
+        isUploadingPhoto,
 
         // Step navigation
         currentStep,
@@ -452,10 +812,12 @@ export const useFormState = (): UseFormStateReturn => {
         loadSavedData,
         clearSavedData,
         getSavedDataInfo,
+        hasUnsavedChanges,
 
         // Form handlers
         handleInputChange,
         handleStrugglingAreasChange,
+        handlePreferredTimingChange,
         handlePhotoChange,
         handleSubmit,
 
@@ -467,6 +829,7 @@ export const useFormState = (): UseFormStateReturn => {
         // Step completion tracking
         isStepCompleted,
         completedSteps,
+        setCompletedSteps,
 
         // Validation functions
         validateCurrentStepData,

@@ -85,7 +85,6 @@ const BlogDetailsPage = () => {
         </AnimatedSection>
 
         {/* Blog Header */}
-        <AnimatedSection>
           <div className="bg-tathir-beige rounded-xl p-4 md:p-8 
             [box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]">
             <div className="space-y-4 md:space-y-6">
@@ -148,10 +147,8 @@ const BlogDetailsPage = () => {
               )}
             </div>
           </div>
-        </AnimatedSection>
 
         {/* Blog Content */}
-        <AnimatedSection>
           <div className="bg-tathir-beige rounded-xl p-4 md:p-8 
             [box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]">
             
@@ -179,7 +176,6 @@ const BlogDetailsPage = () => {
               }}
             />
           </div>
-        </AnimatedSection>
       </div>
     </div>
   );

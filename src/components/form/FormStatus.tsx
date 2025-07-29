@@ -1,20 +1,26 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaCheckCircle, FaSpinner, FaExclamationTriangle, FaHistory, FaClock } from "react-icons/fa";
-import { AutoSaveStatus } from "@/hooks/useAutoSave";
+import { AutoSaveStatus } from "@/hooks/useFormState";
 
 interface FormStatusProps {
   autoSaveStatus: AutoSaveStatus;
   onRestoreData?: () => void;
   hasSavedData?: boolean;
   className?: string;
+  currentStep?: number;
+  hasStepProgress?: boolean;
+  onRestoreStepProgress?: () => void;
 }
 
 export default function FormStatus({
   autoSaveStatus,
   onRestoreData,
   hasSavedData = false,
-  className = ""
+  className = "",
+  currentStep,
+  hasStepProgress = false,
+  onRestoreStepProgress
 }: FormStatusProps) {
   const [showNotification, setShowNotification] = useState(false);
 
@@ -52,13 +58,17 @@ export default function FormStatus({
           {autoSaveStatus.status === 'saving' && (
             <>
               <FaSpinner className="animate-spin text-tathir-light-green" />
-              <span className="text-sm">Saving...</span>
+              <span className="text-sm">
+                Saving{currentStep ? ` step ${currentStep}` : ''}...
+              </span>
             </>
           )}
           {autoSaveStatus.status === 'saved' && (
             <>
               <FaCheckCircle className="text-green-400" />
-              <span className="text-sm">Form saved</span>
+              <span className="text-sm">
+                {currentStep ? `Step ${currentStep} saved` : 'Form saved'}
+              </span>
             </>
           )}
           {autoSaveStatus.status === 'error' && (
@@ -70,6 +80,23 @@ export default function FormStatus({
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Step progress restoration notification */}
+      {hasStepProgress && onRestoreStepProgress && (
+        <div className="bg-blue-500/90 backdrop-blur-sm text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-sm">
+          <FaHistory className="text-lg flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">Step progress found</p>
+            <p className="text-xs opacity-80">Restore your progress from individual steps?</p>
+          </div>
+          <button
+            onClick={onRestoreStepProgress}
+            className="bg-white text-blue-500 px-3 py-1 rounded text-xs font-medium hover:bg-blue-50 transition-colors"
+          >
+            Restore
+          </button>
         </div>
       )}
 

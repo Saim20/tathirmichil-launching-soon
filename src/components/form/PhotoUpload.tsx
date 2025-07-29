@@ -6,14 +6,27 @@ import { labelClassName, fieldContainerClassName } from "./utils";
 interface PhotoUploadProps {
   photoPreview?: string;
   onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onValidationChange?: (fieldId: string, isValid: boolean, error?: string) => void;
   error?: string;
+  required?: boolean;
 }
 
 export default function PhotoUpload({
   photoPreview,
   onPhotoChange,
-  error
+  onValidationChange,
+  error,
+  required = true
 }: PhotoUploadProps) {
+  // Validate photo upload
+  React.useEffect(() => {
+    if (required) {
+      const isValid = !!photoPreview;
+      onValidationChange?.('profilePicture', isValid, isValid ? undefined : 'Profile picture is required');
+    } else {
+      onValidationChange?.('profilePicture', true);
+    }
+  }, [photoPreview, required, onValidationChange]);
   return (
     <div className={`${fieldContainerClassName} mb-8`}>
       <label className={labelClassName}>

@@ -10,6 +10,7 @@ import {
   Step7
 } from "@/components/form";
 import { UseFormStateReturn } from "@/hooks/useFormState";
+import { useStepValidation } from "@/hooks/useStepValidation";
 
 interface FormRendererProps {
   formState: UseFormStateReturn;
@@ -28,8 +29,29 @@ export default function FormRenderer({ formState }: FormRendererProps) {
     photoFile,
     photoPreview,
     handlePhotoChange,
-    handleStrugglingAreasChange
+    handleStrugglingAreasChange,
+    handlePreferredTimingChange
   } = formState;
+
+  // Use step validation hook
+  const stepValidation = useStepValidation();
+
+  // Enhanced next step function that checks validation
+  const handleNext = () => {
+    if (stepValidation.isStepValid()) {
+      nextStep();
+      stepValidation.clearValidations(); // Clear validations when moving to next step
+    } else {
+      // Show validation errors
+      console.log('Step validation failed:', stepValidation.getStepErrors());
+    }
+  };
+
+  // Enhanced prev step function
+  const handlePrev = () => {
+    prevStep();
+    stepValidation.clearValidations(); // Clear validations when moving to prev step
+  };
 
   // Render current step content
   const renderCurrentStep = () => {
@@ -38,10 +60,12 @@ export default function FormRenderer({ formState }: FormRendererProps) {
       formData,
       errors,
       onInputChange: handleInputChange,
-      onNext: nextStep,
-      onPrev: prevStep,
+      onNext: handleNext,
+      onPrev: handlePrev,
+      onValidationChange: stepValidation.handleValidationChange,
       isFirstStep: currentStep === 1,
       isLastStep: currentStep === totalSteps,
+      isStepValid: stepValidation.isStepValid(),
       submitting
     };
 
@@ -72,7 +96,16 @@ export default function FormRenderer({ formState }: FormRendererProps) {
       case 6:
         return <Step6 {...commonProps} />;
       case 7:
-        return <Step7 {...commonProps} />;
+        return (
+          <Step7 
+            {...commonProps}
+            photoFile={photoFile}
+            photoPreview={photoPreview}
+            onPhotoChange={handlePhotoChange}
+            preferredTiming={formData.preferredTiming || []}
+            onPreferredTimingChange={handlePreferredTimingChange}
+          />
+        );
       default:
         return null;
     }
