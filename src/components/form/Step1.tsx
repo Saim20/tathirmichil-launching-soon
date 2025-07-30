@@ -15,11 +15,13 @@ export default function Step1({
   errors, 
   onInputChange, 
   onNext,
-  onValidationChange,
-  isStepValid,
   photoFile,
   photoPreview,
-  onPhotoChange
+  onBlur,
+  onPhotoChange,
+  validationErrors = [],
+  completedFieldsCount = 0,
+  totalFieldsCount = 0
 }: Step1Props) {
   return (
     <StepContainer>
@@ -32,9 +34,8 @@ export default function Step1({
 
       <PhotoUpload
         photoPreview={photoPreview}
+        photoFile={photoFile}
         onPhotoChange={onPhotoChange}
-        onValidationChange={onValidationChange}
-        error={errors.profilePicture}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -43,9 +44,9 @@ export default function Step1({
           label="Full Name"
           icon={<FaUser />}
           required
+          onBlur={onBlur}
           value={formData.fullName || ""}
           onChange={(value) => onInputChange("fullName", value)}
-          onValidationChange={onValidationChange}
           placeholder="Enter your full name"
           errors={errors}
         />
@@ -56,9 +57,9 @@ export default function Step1({
           icon={<FaPhone />}
           required
           type="tel"
+          onBlur={onBlur}
           value={formData.phoneNumber || ""}
           onChange={(value) => onInputChange("phoneNumber", value)}
-          onValidationChange={onValidationChange}
           validatePhone={true}
           placeholder="01XXXXXXXXX"
           errors={errors}
@@ -68,11 +69,11 @@ export default function Step1({
           id="emailAddress"
           label="Email Address"
           icon={<FaEnvelope />}
+          onBlur={onBlur}
           required
           type="email"
           value={formData.emailAddress || ""}
           onChange={(value) => onInputChange("emailAddress", value)}
-          onValidationChange={onValidationChange}
           validateEmail={true}
           placeholder="Enter your email address"
           errors={errors}
@@ -82,11 +83,11 @@ export default function Step1({
           id="facebookProfile"
           label="Facebook Profile"
           icon={<FaFacebook />}
+          onBlur={onBlur}
           required
           type="url"
           value={formData.facebookProfile || ""}
           onChange={(value) => onInputChange("facebookProfile", value)}
-          onValidationChange={onValidationChange}
           validateFacebook={true}
           placeholder="https://facebook.com/yourprofile"
           errors={errors}
@@ -97,10 +98,10 @@ export default function Step1({
             id="location"
             label="Current Location"
             icon={<FaMapMarkerAlt />}
+          onBlur={onBlur}
             required
             value={formData.location || ""}
             onChange={(value) => onInputChange("location", value)}
-            onValidationChange={onValidationChange}
             placeholder="e.g. 204, IBA hostel, Green Super Market, Farmgate"
             errors={errors}
           />
@@ -109,9 +110,11 @@ export default function Step1({
 
       <StepNavigation
         onNext={onNext}
-        isStepValid={isStepValid}
         nextLabel="Continue to Academic Info"
         isFirstStep={true}
+        validationErrors={validationErrors}
+        completedFieldsCount={completedFieldsCount}
+        totalFieldsCount={totalFieldsCount}
       />
     </StepContainer>
   );

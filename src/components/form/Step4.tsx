@@ -7,7 +7,6 @@ import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import CheckboxGroup from "./CheckboxGroup";
 import StepNavigation from "./StepNavigation";
-import { useStepValidation } from "../../hooks/useStepValidation";
 
 interface Step4Props extends FormStepProps, StrugglingAreasProps {}
 
@@ -19,8 +18,11 @@ export default function Step4({
   onPrev,
   strugglingAreas,
   onStrugglingAreasChange,
+  onBlur,
+  validationErrors,
+  completedFieldsCount,
+  totalFieldsCount
 }: Step4Props) {
-  const { handleValidationChange, isStepValid } = useStepValidation();
   const subjectAreas = [
     "English",
     "Mathematics", 
@@ -53,10 +55,10 @@ export default function Step4({
           label="How long have you prepared for IBA?"
           icon={<FaClock />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.prepTimeline || "2-3 months"}
           onChange={(value) => onInputChange("prepTimeline", value)}
-          onValidationChange={handleValidationChange}
           options={timelineOptions}
           errors={errors}
         />
@@ -65,10 +67,10 @@ export default function Step4({
           id="strugglingAreas"
           label="Which sections do you struggle with?"
           options={subjectAreas}
+          onBlur={onBlur}
           required
           selectedValues={strugglingAreas}
           onChange={onStrugglingAreasChange}
-          onValidationChange={handleValidationChange}
         />
 
         <FormField
@@ -76,10 +78,10 @@ export default function Step4({
           label="Where do you see yourself 5 years from now?"
           icon={<FaBullseye />}
           type="textarea"
+          onBlur={onBlur}
           required
           value={formData.fiveYearsVision || ""}
           onChange={(value) => onInputChange("fiveYearsVision", value)}
-          onValidationChange={handleValidationChange}
           placeholder="Share your long-term goals and aspirations..."
           rows={4}
           errors={errors}
@@ -90,10 +92,10 @@ export default function Step4({
           label="What other platforms are you using for preparation?"
           icon={<FaUsers />}
           type="textarea"
+          onBlur={onBlur}
           required
           value={formData.otherPlatforms || ""}
           onChange={(value) => onInputChange("otherPlatforms", value)}
-          onValidationChange={handleValidationChange}
           placeholder="List other coaching centers, online platforms, tutors, etc. You do not need any other coaching or tutor for IBA/BUP preparation."
           rows={3}
           errors={errors}
@@ -104,10 +106,10 @@ export default function Step4({
           label="What are your admission plans?"
           icon={<FaRoad />}
           type="textarea"
+          onBlur={onBlur}
           required
           value={formData.admissionPlans || ""}
           onChange={(value) => onInputChange("admissionPlans", value)}
-          onValidationChange={handleValidationChange}
           placeholder="List out all options and decisions with some explanation and proper order. This will help me guide you better."
           rows={3}
           errors={errors}
@@ -117,7 +119,9 @@ export default function Step4({
       <StepNavigation
         onNext={onNext}
         onPrev={onPrev}
-        isStepValid={isStepValid()}
+        validationErrors={validationErrors || []}
+        completedFieldsCount={completedFieldsCount || 0}
+        totalFieldsCount={totalFieldsCount || 0}
         nextLabel="Continue to Additional Info"
         prevLabel="Back to Academic Info"
       />

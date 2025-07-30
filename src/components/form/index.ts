@@ -17,5 +17,7 @@ export { default as ProgressIndicator } from './ProgressIndicator';
 export { default as SuccessView } from './SuccessView';
 export { default as LoadingView } from './LoadingView';
 export { default as FormRenderer } from './FormRenderer';
+export { default as SubmissionStatus } from './SubmissionStatus';
+export { default as ValidationSummary } from './ValidationSummary';
 export * from './types';
 export * from './utils';

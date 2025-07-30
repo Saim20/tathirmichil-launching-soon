@@ -6,7 +6,6 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
-import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step5({ 
   formData, 
@@ -14,8 +13,11 @@ export default function Step5({
   onInputChange, 
   onNext,
   onPrev,
+  onBlur,
+  validationErrors,
+  completedFieldsCount,
+  totalFieldsCount
 }: FormStepProps) {
-  const { handleValidationChange, isStepValid } = useStepValidation();
   const internetOptions = [
     { value: "Yes", label: "Yes - High speed & reliable" },
     { value: "Mostly", label: "Mostly - Occasional issues" },
@@ -67,15 +69,15 @@ export default function Step5({
       />
 
       <div className="grid grid-cols-1 gap-8">
-        <FormField
+                <FormField
           id="stableInternet"
           label="Do you have stable internet?"
           icon={<FaWifi />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.stableInternet || "Yes"}
           onChange={(value) => onInputChange("stableInternet", value)}
-          onValidationChange={handleValidationChange}
           options={internetOptions}
           errors={errors}
         />
@@ -85,62 +87,62 @@ export default function Step5({
           label="I will keep my video camera on during classes (Mandatory)"
           icon={<FaVideo />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.videoCameraOn || "I agree"}
           onChange={(value) => onInputChange("videoCameraOn", value)}
-          onValidationChange={handleValidationChange}
           options={videoOptions}
           errors={errors}
         />
 
         <FormField
           id="attendClasses"
-          label="I will attend classes regularly"
+          label="I will attend every live class"
           icon={<FaCalendarCheck />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.attendClasses || "Always unless emergency"}
           onChange={(value) => onInputChange("attendClasses", value)}
-          onValidationChange={handleValidationChange}
           options={attendanceOptions}
           errors={errors}
         />
 
         <FormField
           id="activeParticipation"
-          label="I will actively participate in classes"
+          label="I will actively participate in class discussions"
           icon={<FaComments />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.activeParticipation || "Sure"}
           onChange={(value) => onInputChange("activeParticipation", value)}
-          onValidationChange={handleValidationChange}
           options={participationOptions}
           errors={errors}
         />
 
         <FormField
           id="skipOtherCoachings"
-          label="I will skip other coachings/classes during this batch"
+          label="I will skip other coachings for this batch"
           icon={<FaPause />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.skipOtherCoachings || "Done"}
           onChange={(value) => onInputChange("skipOtherCoachings", value)}
-          onValidationChange={handleValidationChange}
           options={skipCoachingOptions}
           errors={errors}
         />
 
         <FormField
           id="stickTillExam"
-          label="I will stick with this batch till my exam"
+          label="I will stick with this batch till HSC exam"
           icon={<FaLock />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.stickTillExam || "Locked in"}
           onChange={(value) => onInputChange("stickTillExam", value)}
-          onValidationChange={handleValidationChange}
           options={commitmentOptions}
           errors={errors}
         />
@@ -149,7 +151,9 @@ export default function Step5({
       <StepNavigation
         onNext={onNext}
         onPrev={onPrev}
-        isStepValid={isStepValid()}
+        validationErrors={validationErrors || []}
+        completedFieldsCount={completedFieldsCount || 0}
+        totalFieldsCount={totalFieldsCount || 0}
         nextLabel="Continue to Personality"
         prevLabel="Back to Preparation"
       />

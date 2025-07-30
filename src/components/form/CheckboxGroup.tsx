@@ -4,14 +4,14 @@ import { FaCheckSquare } from "react-icons/fa";
 import { checkboxClassName, labelClassName, fieldContainerClassName } from "./utils";
 
 interface CheckboxGroupProps {
+  id: string;
   label: string;
   options: string[];
   selectedValues: string[];
-  onChange: (value: string, checked: boolean) => void;
-  onValidationChange?: (fieldId: string, isValid: boolean, error?: string) => void;
+  onChange: (option: string, checked: boolean) => void;
+  onBlur?: () => void; // Add onBlur for immediate validation
   required?: boolean;
   tip?: string;
-  id?: string;
 }
 
 export default function CheckboxGroup({
@@ -19,19 +19,11 @@ export default function CheckboxGroup({
   options,
   selectedValues,
   onChange,
-  onValidationChange,
+  onBlur,
   required = false,
   tip,
   id = "checkboxGroup"
 }: CheckboxGroupProps) {
-  // Validation effect
-  useEffect(() => {
-    if (onValidationChange) {
-      const isValid = !required || selectedValues.length > 0;
-      const error = required && selectedValues.length === 0 ? "Please select at least one option" : undefined;
-      onValidationChange(id, isValid, error);
-    }
-  }, [selectedValues, required, onValidationChange, id]);
   return (
     <div className={fieldContainerClassName}>
       <label className={`${labelClassName} flex items-center gap-2`}>
@@ -54,6 +46,7 @@ export default function CheckboxGroup({
               type="checkbox"
               checked={selectedValues.includes(option)}
               onChange={(e) => onChange(option, e.target.checked)}
+              onBlur={onBlur}
               className={checkboxClassName}
             />
             <span className="text-sm font-medium">{option}</span>

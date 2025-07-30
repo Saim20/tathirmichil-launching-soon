@@ -83,7 +83,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
     try {
       // Basic validation
-      if (!formData.name || !formData.phone || !formData.address || !formData.city) {
+      if (!formData.name || !formData.phone || !formData.address || !formData.city || !formData.email || !formData.postalCode) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -99,7 +99,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
       }
 
       // Email validation (if provided)
-      if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         throw new Error('Please enter a valid email address');
       }
 
@@ -283,7 +283,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
               <div>
                 <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
                   <Mail className="w-4 h-4" />
-                  Email Address
+                  Email Address *
                 </label>
                 <input
                   type="email"
@@ -291,7 +291,8 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-tathir-brown/20 rounded-lg focus:outline-none focus:border-tathir-dark-green bg-white text-tathir-brown transition-colors"
-                  placeholder="your.email@example.com (optional)"
+                  placeholder="your.email@example.com"
+                  required
                 />
               </div>
 
@@ -333,7 +334,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
               <div>
                 <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
                   <MapPin className="w-4 h-4" />
-                  Postal Code
+                  Postal Code *
                 </label>
                 <input
                   type="text"
@@ -342,6 +343,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-tathir-brown/20 rounded-lg focus:outline-none focus:border-tathir-dark-green bg-white text-tathir-brown transition-colors"
                   placeholder="1000 (helps with accurate delivery)"
+                  required
                 />
               </div>
 

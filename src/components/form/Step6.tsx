@@ -6,7 +6,6 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
-import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step6({ 
   formData, 
@@ -14,8 +13,11 @@ export default function Step6({
   onInputChange, 
   onNext,
   onPrev,
+  onBlur,
+  validationErrors,
+  completedFieldsCount,
+  totalFieldsCount
 }: FormStepProps) {
-  const { handleValidationChange, isStepValid } = useStepValidation();
   return (
     <StepContainer>
       <StepHeader
@@ -31,10 +33,10 @@ export default function Step6({
           label="Tell me about a recent failure and what you learned from it"
           icon={<FaHeart />}
           type="textarea"
+          onBlur={onBlur}
           required
           value={formData.recentFailure || ""}
           onChange={(value) => onInputChange("recentFailure", value)}
-          onValidationChange={handleValidationChange}
           placeholder="Share a meaningful experience where you faced failure and the lessons learned..."
           rows={5}
           errors={errors}
@@ -45,10 +47,10 @@ export default function Step6({
           label="What's the last meaningful book/video/article you consumed?"
           icon={<FaBook />}
           type="textarea"
+          onBlur={onBlur}
           required
           value={formData.lastBookVideoArticle || ""}
           onChange={(value) => onInputChange("lastBookVideoArticle", value)}
-          onValidationChange={handleValidationChange}
           placeholder="Tell us about something you recently read/watched that impacted you and why..."
           rows={4}
           errors={errors}
@@ -58,7 +60,9 @@ export default function Step6({
       <StepNavigation
         onNext={onNext}
         onPrev={onPrev}
-        isStepValid={isStepValid()}
+        validationErrors={validationErrors || []}
+        completedFieldsCount={completedFieldsCount || 0}
+        totalFieldsCount={totalFieldsCount || 0}
         nextLabel="Final Step"
         prevLabel="Back to Commitment"
       />

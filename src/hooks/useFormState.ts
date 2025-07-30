@@ -18,6 +18,17 @@ export interface AutoSaveStatus {
     error?: string;
 }
 
+export interface SubmissionStatus {
+    status: 'unsubmitted' | 'submitting' | 'submitted' | 'modified' | 'error';
+    lastSubmissionDate?: Date;
+    hasUnsavedChanges: boolean;
+}
+
+export interface StepValidationError {
+    field: string;
+    message: string;
+}
+
 export interface UseFormStateReturn {
     // Form data and state
     formData: Partial<PersonalBatchFormData>;
@@ -63,6 +74,16 @@ export interface UseFormStateReturn {
     getSavedDataInfo: () => any;
     hasUnsavedChanges: boolean;
 
+    // Submission status
+    submissionStatus: SubmissionStatus;
+    getAllValidationErrors: () => FormValidationErrors;
+    getCurrentStepValidationErrors: () => StepValidationError[];
+    getCompletedFieldsCount: () => number;
+    getTotalFieldsCount: () => number;
+    getStepValidationErrors: (stepNumber: number) => StepValidationError[];
+    getStepFieldsCount: (stepNumber: number) => number;
+    validateAndSetCurrentStepErrors: () => boolean;
+
     // Form handlers
     handleInputChange: (field: string, value: any) => void;
     handleStrugglingAreasChange: (area: string, checked: boolean) => void;
@@ -101,6 +122,12 @@ export const useFormState = (): UseFormStateReturn => {
     const [submitSuccess, setSubmitSuccess] = useState<string>("");
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string>("");
+    
+    // Submission status tracking
+    const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>({
+        status: 'unsubmitted',
+        hasUnsavedChanges: false
+    });
     const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string>(""); // Track current uploaded photo URL
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false); // Track photo upload status
     const [errors, setErrors] = useState<FormValidationErrors>({});
@@ -477,10 +504,18 @@ export const useFormState = (): UseFormStateReturn => {
         setFormData((prev) => ({ ...prev, [field]: value }));
         setHasUnsavedChanges(true); // Mark as having unsaved changes
 
-        // Clear error when user starts typing
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: "" }));
+        // Update submission status if form was previously submitted
+        if (submissionStatus.status === 'submitted') {
+            setSubmissionStatus(prev => ({
+                ...prev,
+                status: 'modified',
+                hasUnsavedChanges: true
+            }));
         }
+
+        // Don't clear errors immediately - let validation handle it
+        // This prevents the flickering effect
+        
         // Clear general submit error when user starts typing
         if (submitError) {
             setSubmitError("");
@@ -645,6 +680,177 @@ export const useFormState = (): UseFormStateReturn => {
         return titles[step as keyof typeof titles] || "";
     };
 
+    // Consolidated validation logic for any step
+    const getStepValidationErrors = (stepNumber: number): StepValidationError[] => {
+        const stepErrors: StepValidationError[] = [];
+        
+        switch (stepNumber) {
+            case 1:
+                if (!formData.fullName?.trim()) {
+                    stepErrors.push({ field: 'fullName', message: 'Full Name is required' });
+                }
+                if (!formData.emailAddress?.trim()) {
+                    stepErrors.push({ field: 'emailAddress', message: 'Email Address is required' });
+                }
+                if (!formData.phoneNumber?.trim()) {
+                    stepErrors.push({ field: 'phoneNumber', message: 'Phone Number is required' });
+                }
+                if (!formData.facebookProfile?.trim()) {
+                    stepErrors.push({ field: 'facebookProfile', message: 'Facebook Profile is required' });
+                }
+                if (!formData.location?.trim()) {
+                    stepErrors.push({ field: 'location', message: 'Current Location is required' });
+                }
+                if (!photoPreview?.trim() && !photoFile) {
+                    stepErrors.push({ field: 'profilePicture', message: 'Profile Picture is required' });
+                }
+                break;
+            case 2:
+                if (!formData.school?.trim()) {
+                    stepErrors.push({ field: 'school', message: 'School is required' });
+                }
+                if (!formData.college?.trim()) {
+                    stepErrors.push({ field: 'college', message: 'College is required' });
+                }
+                if (!formData.group) {
+                    stepErrors.push({ field: 'group', message: 'Group is required' });
+                }
+                if (!formData.hscBatch) {
+                    stepErrors.push({ field: 'hscBatch', message: 'HSC Batch is required' });
+                }
+                if (!formData.academicDescription?.trim()) {
+                    stepErrors.push({ field: 'academicDescription', message: 'Academic Description is required' });
+                }
+                break;
+            case 3:
+                if (!formData.personalDescription?.trim()) {
+                    stepErrors.push({ field: 'personalDescription', message: 'Personal Description is required' });
+                }
+                if (!formData.whyIBA?.trim()) {
+                    stepErrors.push({ field: 'whyIBA', message: 'Why IBA is required' });
+                }
+                if (!formData.whyApplyingHere?.trim()) {
+                    stepErrors.push({ field: 'whyApplyingHere', message: 'Why applying here is required' });
+                }
+                if (!formData.ifNotIBA?.trim()) {
+                    stepErrors.push({ field: 'ifNotIBA', message: 'If not IBA response is required' });
+                }
+                break;
+            case 4:
+                if (!formData.prepTimeline) {
+                    stepErrors.push({ field: 'prepTimeline', message: 'Preparation Timeline is required' });
+                }
+                if (!formData.strugglingAreas || formData.strugglingAreas.length === 0) {
+                    stepErrors.push({ field: 'strugglingAreas', message: 'Struggling Areas selection is required' });
+                }
+                if (!formData.fiveYearsVision?.trim()) {
+                    stepErrors.push({ field: 'fiveYearsVision', message: 'Five Years Vision is required' });
+                }
+                if (!formData.otherPlatforms?.trim()) {
+                    stepErrors.push({ field: 'otherPlatforms', message: 'Other Platforms response is required' });
+                }
+                if (!formData.admissionPlans?.trim()) {
+                    stepErrors.push({ field: 'admissionPlans', message: 'Admission Plans are required' });
+                }
+                break;
+            case 5:
+                if (!formData.stableInternet) {
+                    stepErrors.push({ field: 'stableInternet', message: 'Stable Internet confirmation is required' });
+                }
+                if (!formData.videoCameraOn) {
+                    stepErrors.push({ field: 'videoCameraOn', message: 'Video Camera confirmation is required' });
+                }
+                if (!formData.attendClasses) {
+                    stepErrors.push({ field: 'attendClasses', message: 'Attend Classes confirmation is required' });
+                }
+                if (!formData.activeParticipation) {
+                    stepErrors.push({ field: 'activeParticipation', message: 'Active Participation confirmation is required' });
+                }
+                if (!formData.skipOtherCoachings) {
+                    stepErrors.push({ field: 'skipOtherCoachings', message: 'Skip Other Coachings confirmation is required' });
+                }
+                if (!formData.stickTillExam) {
+                    stepErrors.push({ field: 'stickTillExam', message: 'Stick Till Exam confirmation is required' });
+                }
+                break;
+            case 6:
+                if (!formData.recentFailure?.trim()) {
+                    stepErrors.push({ field: 'recentFailure', message: 'Recent Failure response is required' });
+                }
+                if (!formData.lastBookVideoArticle?.trim()) {
+                    stepErrors.push({ field: 'lastBookVideoArticle', message: 'Last Book/Video/Article response is required' });
+                }
+                break;
+            case 7:
+                if (!formData.preferredTiming || formData.preferredTiming.length === 0) {
+                    stepErrors.push({ field: 'preferredTiming', message: 'Preferred Timing selection is required' });
+                }
+                if (!formData.preferredBatchType) {
+                    stepErrors.push({ field: 'preferredBatchType', message: 'Preferred Batch Type is required' });
+                }
+                break;
+        }
+        
+        return stepErrors;
+    };
+
+    // Validate and set field errors for current step
+    const validateAndSetCurrentStepErrors = () => {
+        const stepErrors = getStepValidationErrors(currentStep);
+        const newErrors: FormValidationErrors = {};
+        
+        // Convert StepValidationError[] to FormValidationErrors
+        stepErrors.forEach(error => {
+            newErrors[error.field] = error.message;
+        });
+        
+        setErrors(newErrors);
+        return stepErrors.length === 0;
+    };
+
+    // Get all validation errors for the form
+    const getAllValidationErrors = (): FormValidationErrors => {
+        const allErrors: FormValidationErrors = {};
+        for (let step = 1; step <= totalSteps; step++) {
+            const stepErrors = getStepValidationErrors(step);
+            stepErrors.forEach(error => {
+                allErrors[error.field] = error.message;
+            });
+        }
+        return allErrors;
+    };
+
+    // Get validation errors for current step (for step navigation display)
+    const getCurrentStepValidationErrors = (): StepValidationError[] => {
+        return getStepValidationErrors(currentStep);
+    };
+
+    // Get completed fields count for current step
+    const getCompletedFieldsCount = (): number => {
+        const totalFields = getTotalFieldsCount();
+        const errors = getCurrentStepValidationErrors();
+        return Math.max(0, totalFields - errors.length);
+    };
+
+    // Get total fields count for any step
+    const getStepFieldsCount = (stepNumber: number): number => {
+        switch (stepNumber) {
+            case 1: return 6; // fullName, emailAddress, phoneNumber, facebookProfile, location, profilePicture
+            case 2: return 5; // school, college, group, hscBatch, academicDescription  
+            case 3: return 4; // personalDescription, whyIBA, whyApplyingHere, ifNotIBA
+            case 4: return 5; // prepTimeline, strugglingAreas, fiveYearsVision, otherPlatforms, admissionPlans
+            case 5: return 6; // stableInternet, videoCameraOn, attendClasses, activeParticipation, skipOtherCoachings, stickTillExam
+            case 6: return 2; // recentFailure, lastBookVideoArticle
+            case 7: return 2; // preferredTiming, preferredBatchType
+            default: return 0;
+        }
+    };
+
+    // Get total fields count for current step
+    const getTotalFieldsCount = (): number => {
+        return getStepFieldsCount(currentStep);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -715,6 +921,7 @@ export const useFormState = (): UseFormStateReturn => {
         console.log("Form data validation passed, proceeding with submission:", formData);
 
         setSubmitting(true);
+        setSubmissionStatus(prev => ({ ...prev, status: 'submitting' }));
 
         try {
             // Check if user is authenticated
@@ -752,6 +959,13 @@ export const useFormState = (): UseFormStateReturn => {
                 clearSavedData();
                 setHasUnsavedChanges(false);
 
+                // Update submission status
+                setSubmissionStatus({
+                    status: 'submitted',
+                    lastSubmissionDate: new Date(),
+                    hasUnsavedChanges: false
+                });
+
                 setTimeout(() => {
                     setSubmitted(true);
                     setIsEditing(false);
@@ -764,6 +978,7 @@ export const useFormState = (): UseFormStateReturn => {
             setSubmitError(
                 error.message || "Failed to submit form. Please try again."
             );
+            setSubmissionStatus(prev => ({ ...prev, status: 'error' }));
         } finally {
             setSubmitting(false);
         }
@@ -813,6 +1028,16 @@ export const useFormState = (): UseFormStateReturn => {
         clearSavedData,
         getSavedDataInfo,
         hasUnsavedChanges,
+
+        // Submission status
+        submissionStatus,
+        getAllValidationErrors ,
+        getCurrentStepValidationErrors,
+        getCompletedFieldsCount,
+        getTotalFieldsCount,
+        getStepValidationErrors,
+        getStepFieldsCount,
+        validateAndSetCurrentStepErrors,
 
         // Form handlers
         handleInputChange,

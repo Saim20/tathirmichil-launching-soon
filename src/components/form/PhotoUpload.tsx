@@ -4,29 +4,18 @@ import { FaCamera } from "react-icons/fa";
 import { labelClassName, fieldContainerClassName } from "./utils";
 
 interface PhotoUploadProps {
-  photoPreview?: string;
+  photoFile: File | null;
+  photoPreview: string;
   onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onValidationChange?: (fieldId: string, isValid: boolean, error?: string) => void;
-  error?: string;
   required?: boolean;
+  tip?: string;
 }
 
 export default function PhotoUpload({
   photoPreview,
   onPhotoChange,
-  onValidationChange,
-  error,
   required = true
 }: PhotoUploadProps) {
-  // Validate photo upload
-  React.useEffect(() => {
-    if (required) {
-      const isValid = !!photoPreview;
-      onValidationChange?.('profilePicture', isValid, isValid ? undefined : 'Profile picture is required');
-    } else {
-      onValidationChange?.('profilePicture', true);
-    }
-  }, [photoPreview, required, onValidationChange]);
   return (
     <div className={`${fieldContainerClassName} mb-8`}>
       <label className={labelClassName}>
@@ -56,12 +45,6 @@ export default function PhotoUpload({
         <p className="text-white/60 text-sm mt-2 text-center">
           Click to upload a profile picture
         </p>
-        {error && (
-          <p className="text-tathir-error text-sm mt-2 flex items-center gap-1 animate-pulse-soft justify-center">
-            <span>⚠️</span>
-            {error}
-          </p>
-        )}
       </div>
     </div>
   );

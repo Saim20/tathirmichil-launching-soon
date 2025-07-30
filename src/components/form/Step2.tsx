@@ -6,16 +6,21 @@ import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
-import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step2({ 
   formData, 
   errors, 
   onInputChange, 
   onNext, 
-  onPrev
+  onPrev,
+  onBlur,
+  isFirstStep,
+  isLastStep,
+  submitting,
+  validationErrors,
+  completedFieldsCount,
+  totalFieldsCount
 }: FormStepProps) {
-  const { handleValidationChange, isStepValid } = useStepValidation();
   return (
     <StepContainer>
       <StepHeader
@@ -30,10 +35,10 @@ export default function Step2({
           id="school"
           label="School"
           icon={<FaSchool />}
+          onBlur={onBlur}
           required
           value={formData.school || ""}
           onChange={(value) => onInputChange("school", value)}
-          onValidationChange={handleValidationChange}
           placeholder="Enter your school name"
           errors={errors}
         />
@@ -42,10 +47,10 @@ export default function Step2({
           id="college"
           label="College"
           icon={<FaUniversity />}
+          onBlur={onBlur}
           required
           value={formData.college || ""}
           onChange={(value) => onInputChange("college", value)}
-          onValidationChange={handleValidationChange}
           placeholder="Enter your college name"
           errors={errors}
         />
@@ -55,6 +60,7 @@ export default function Step2({
           label="Group"
           icon={<FaBookOpen />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.group || "Science"}
           onChange={(value) => onInputChange("group", value)}
@@ -72,6 +78,7 @@ export default function Step2({
           label="HSC Batch Year"
           icon={<FaCalendarAlt />}
           type="select"
+          onBlur={onBlur}
           required
           value={formData.hscBatch || "2025"}
           onChange={(value) => onInputChange("hscBatch", value)}
@@ -102,10 +109,10 @@ export default function Step2({
             label="Academic Background"
             icon={<FaBookOpen />}
             type="textarea"
+          onBlur={onBlur}
             required
             value={formData.academicDescription || ""}
             onChange={(value) => onInputChange("academicDescription", value)}
-            onValidationChange={handleValidationChange}
             placeholder="Share your academic interests, strengths, challenges, and what motivates you to study."
             rows={6}
             errors={errors}
@@ -113,10 +120,12 @@ export default function Step2({
         </div>
       </div>
 
-            <StepNavigation
+      <StepNavigation
         onPrev={onPrev}
         onNext={onNext}
-        isStepValid={isStepValid()}
+        validationErrors={validationErrors || []}
+        completedFieldsCount={completedFieldsCount || 0}
+        totalFieldsCount={totalFieldsCount || 0}
         nextLabel="Continue to Motivations"
         prevLabel="Back to Personal Info"
       />

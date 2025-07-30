@@ -68,10 +68,10 @@ export default function SuccessView({
             Edit Application
           </button>
           <button
-            onClick={() => router.push("/student")}
+            onClick={() => router.push("/")}
             className="tathir-card-hover bg-tathir-light-green hover:bg-tathir-light-green/80 text-tathir-dark-green px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
           >
-            Back to Dashboard
+            Back to Home
           </button>
         </div>
         

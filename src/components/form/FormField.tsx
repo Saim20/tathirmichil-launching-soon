@@ -23,7 +23,7 @@ interface FormFieldProps {
   type?: "text" | "email" | "tel" | "url" | "select" | "textarea";
   value: string;
   onChange: (value: string) => void;
-  onValidationChange?: (fieldId: string, isValid: boolean, error?: string) => void;
+  onBlur?: () => void; // Add onBlur for immediate validation
   placeholder?: string;
   options?: { value: string; label: string }[];
   rows?: number;
@@ -47,7 +47,7 @@ export default function FormField({
   type = "text",
   value,
   onChange,
-  onValidationChange,
+  onBlur,
   placeholder,
   options = [],
   rows = 4,
@@ -57,59 +57,7 @@ export default function FormField({
   showCount = false,
   maxLength,
   minSentences,
-  validateEmail = false,
-  validatePhone = false,
-  validateFacebook = false,
-  minLength,
 }: FormFieldProps) {
-  // Internal validation function
-  const validateField = React.useCallback((fieldValue: string): { isValid: boolean; error?: string } => {
-    // Required field validation
-    if (required && (!fieldValue || fieldValue.trim() === "")) {
-      return { isValid: false, error: "This field is required" };
-    }
-
-    // Skip other validations if field is empty and not required
-    if (!fieldValue || fieldValue.trim() === "") {
-      return { isValid: true };
-    }
-
-    // Email validation
-    if (validateEmail && (!fieldValue.includes("@") || !fieldValue.includes("."))) {
-      return { isValid: false, error: "Please enter a valid email address" };
-    }
-
-    // Phone validation
-    if (validatePhone && fieldValue.replace(/\D/g, "").length < 8) {
-      return { isValid: false, error: "Please enter a valid phone number" };
-    }
-
-    // Facebook validation
-    if (validateFacebook && !fieldValue.toLowerCase().includes("facebook")) {
-      return { isValid: false, error: "Please enter a valid Facebook profile URL" };
-    }
-
-    // Minimum length validation
-    if (minLength && fieldValue.trim().length < minLength) {
-      return { isValid: false, error: `Minimum ${minLength} characters required` };
-    }
-
-    // Minimum sentences validation
-    if (minSentences) {
-      const sentenceCount = fieldValue.split(/[.!?]+/).filter(s => s.trim().length > 5).length;
-      if (sentenceCount < minSentences) {
-        return { isValid: false, error: `Please write at least ${minSentences} sentences` };
-      }
-    }
-
-    return { isValid: true };
-  }, [required, validateEmail, validatePhone, validateFacebook, minLength, minSentences]);
-
-  // Validate on value change
-  React.useEffect(() => {
-    const { isValid, error } = validateField(value);
-    onValidationChange?.(id, isValid, error);
-  }, [value, validateField, id, onValidationChange]);
 
   // Handle input change
   const handleChange = (newValue: string) => {
@@ -128,6 +76,7 @@ export default function FormField({
           )}
           value={value}
           onChange={(e) => handleChange(e.target.value)}
+          onBlur={onBlur}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -156,6 +105,7 @@ export default function FormField({
             )}
             value={value}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={onBlur}
             placeholder={placeholder}
             rows={rows}
             maxLength={maxLength}
@@ -191,6 +141,7 @@ export default function FormField({
         )}
         value={value}
         onChange={(e) => handleChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
       />
     );

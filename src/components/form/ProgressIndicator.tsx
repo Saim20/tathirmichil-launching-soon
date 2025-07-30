@@ -38,7 +38,7 @@ export default function ProgressIndicator({
                  formData.emailAddress?.trim() && 
                  formData.phoneNumber?.trim() && 
                  formData.facebookProfile?.trim() &&
-                 (photoPreview?.trim() || photoFile)); // Include photo validation with proper empty string check
+                 (photoPreview?.trim() || photoFile));
       case 2:
         return !!(formData.school?.trim() && 
                  formData.college?.trim() && 
@@ -130,23 +130,31 @@ export default function ProgressIndicator({
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => {
           const isRealTimeCompleted = validateStepRealTime(step);
           const isAccessible = true; // Allow free navigation to all steps
+          const isCurrent = step === currentStep;
           
           return (
             <button
               key={step}
               type="button"
               onClick={() => goToStep(step)}
-              className={`w-12 h-12 rounded-full font-bold text-sm transition-all duration-300 transform hover:scale-110 tathir-card-hover ${
-                step === currentStep
-                  ? 'bg-tathir-light-green text-tathir-maroon shadow-lg scale-110'
+              className={`relative w-12 h-12 rounded-full font-bold text-sm transition-all duration-300 transform hover:scale-110 tathir-card-hover ${
+                isCurrent
+                  ? 'bg-tathir-light-green text-tathir-maroon shadow-lg scale-110 ring-2 ring-white/50'
                   : isRealTimeCompleted
                   ? 'bg-tathir-success/80 text-white hover:bg-tathir-light-green hover:text-tathir-maroon backdrop-blur-sm'
-                  : 'bg-tathir-cream text-tathir-maroon hover:bg-tathir-light-green hover:text-tathir-maroon backdrop-blur-sm'
+                  : 'bg-red-500/20 border-2 border-red-500/40 text-red-300 hover:bg-red-500/30 hover:border-red-500/60 backdrop-blur-sm'
               }`}
               disabled={!isAccessible}
               title={`Step ${step}: ${getStepTitle(step)}${isRealTimeCompleted ? ' (Completed)' : ' (Incomplete)'}`}
             >
-              {isRealTimeCompleted ? '✓' : step}
+              {isRealTimeCompleted ? '✓' : isCurrent ? step : '!'}
+              
+              {/* Warning indicator for incomplete steps */}
+              {!isRealTimeCompleted && !isCurrent && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">!</span>
+                </div>
+              )}
             </button>
           );
         })}

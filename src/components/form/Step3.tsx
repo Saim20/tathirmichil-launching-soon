@@ -1,40 +1,46 @@
 "use client";
 import React from "react";
-import { FaUsers, FaHeart, FaBullseye, FaLightbulb } from "react-icons/fa";
+import { FaHeart, FaUser, FaBullseye, FaRocket } from "react-icons/fa";
 import { FormStepProps } from "./types";
 import StepContainer from "./StepContainer";
 import StepHeader from "./StepHeader";
 import FormField from "./FormField";
 import StepNavigation from "./StepNavigation";
-import { useStepValidation } from "../../hooks/useStepValidation";
 
 export default function Step3({ 
   formData, 
   errors, 
   onInputChange, 
-  onNext,
+  onBlur,
+  onNext, 
   onPrev,
+  isFirstStep,
+  isLastStep,
+  submitting,
+  validationErrors,
+  completedFieldsCount,
+  totalFieldsCount
 }: FormStepProps) {
-  const { handleValidationChange, isStepValid } = useStepValidation();
+
   return (
     <StepContainer>
       <StepHeader
         stepNumber={3}
         title="Personal Questions"
         description="Help me understand your motivations and goals"
-        icon={<FaUsers />}
+        icon={<FaUser />}
       />
 
       <div className="space-y-8">
         <FormField
           id="personalDescription"
           label="Tell me about yourself"
-          icon={<FaUsers />}
+          icon={<FaUser />}
           type="textarea"
           required
           value={formData.personalDescription || ""}
           onChange={(value) => onInputChange("personalDescription", value)}
-          onValidationChange={handleValidationChange}
+          onBlur={onBlur}
           placeholder="Share your personality, interests, hobbies, values, dreams, and what makes you unique. Be authentic and let your voice shine through!"
           rows={6}
           errors={errors}
@@ -48,7 +54,7 @@ export default function Step3({
           required
           value={formData.whyIBA || ""}
           onChange={(value) => onInputChange("whyIBA", value)}
-          onValidationChange={handleValidationChange}
+          onBlur={onBlur}
           placeholder="Share your motivation for choosing IBA. What draws you to this institution? What are your goals?"
           rows={4}
           errors={errors}
@@ -62,7 +68,7 @@ export default function Step3({
           required
           value={formData.whyApplyingHere || ""}
           onChange={(value) => onInputChange("whyApplyingHere", value)}
-          onValidationChange={handleValidationChange}
+          onBlur={onBlur}
           placeholder="What brought you so far?"
           rows={4}
           errors={errors}
@@ -71,12 +77,12 @@ export default function Step3({
         <FormField
           id="ifNotIBA"
           label="What are your expectations from this batch?"
-          icon={<FaLightbulb />}
+          icon={<FaRocket />}
           type="textarea"
           required
           value={formData.ifNotIBA || ""}
           onChange={(value) => onInputChange("ifNotIBA", value)}
-          onValidationChange={handleValidationChange}
+          onBlur={onBlur}
           placeholder="Share your expectations, goals, and what you hope to achieve through this program."
           rows={4}
           errors={errors}
@@ -86,7 +92,9 @@ export default function Step3({
       <StepNavigation
         onPrev={onPrev}
         onNext={onNext}
-        isStepValid={isStepValid()}
+        validationErrors={validationErrors || []}
+        completedFieldsCount={completedFieldsCount || 0}
+        totalFieldsCount={totalFieldsCount || 0}
         nextLabel="Continue to Preferences"
         prevLabel="Back to Academic Info"
       />

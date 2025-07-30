@@ -7,7 +7,9 @@ import {
   ProgressIndicator,
   SuccessView,
   LoadingView,
-  FormRenderer
+  FormRenderer,
+  SubmissionStatus,
+  ValidationSummary
 } from "@/components/form";
 
 export default function PersonalBatchFormPage() {
@@ -39,7 +41,11 @@ export default function PersonalBatchFormPage() {
     setCompletedSteps,
     formData,
     photoFile,
-    photoPreview
+    photoPreview,
+    submissionStatus,
+    getCurrentStepValidationErrors,
+    getCompletedFieldsCount,
+    getTotalFieldsCount
   } = formState;
 
   // Helper function to check if any saved data exists
@@ -87,6 +93,15 @@ export default function PersonalBatchFormPage() {
         {/* Header */}
         <FormHeader
           existingFormData={existingFormData}
+        />
+
+        {/* Submission Status */}
+        <SubmissionStatus
+          status={submissionStatus.status}
+          lastSubmissionDate={submissionStatus.lastSubmissionDate}
+          hasUnsavedChanges={submissionStatus.hasUnsavedChanges}
+          autoSaveStatus={autoSaveStatus}
+          className="mb-6"
         />
 
         {/* Progress Indicator */}

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useCallback, useRef } from "react";
 import { 
   Step1, 
   Step2, 
@@ -10,7 +10,6 @@ import {
   Step7
 } from "@/components/form";
 import { UseFormStateReturn } from "@/hooks/useFormState";
-import { useStepValidation } from "@/hooks/useStepValidation";
 
 interface FormRendererProps {
   formState: UseFormStateReturn;
@@ -30,27 +29,86 @@ export default function FormRenderer({ formState }: FormRendererProps) {
     photoPreview,
     handlePhotoChange,
     handleStrugglingAreasChange,
-    handlePreferredTimingChange
+    handlePreferredTimingChange,
+    getAllValidationErrors,
+    getCurrentStepValidationErrors,
+    getCompletedFieldsCount,
+    getTotalFieldsCount,
+    validateAndSetCurrentStepErrors
   } = formState;
 
-  // Use step validation hook
-  const stepValidation = useStepValidation();
+  // Debounce timeout ref
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Enhanced input change handler with proper debouncing
+  const handleInputChangeWithValidation = useCallback((field: string, value: any) => {
+    // Update the form data first
+    handleInputChange(field, value);
+    
+    // Clear existing timeout
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+    
+    // Set new timeout for validation (shorter delay for better UX)
+    validationTimeoutRef.current = setTimeout(() => {
+      validateAndSetCurrentStepErrors();
+    }, 300);
+  }, [handleInputChange, validateAndSetCurrentStepErrors]);
+
+  // Immediate validation on blur
+  const handleBlurValidation = useCallback(() => {
+    // Clear any pending timeout and validate immediately
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+    validateAndSetCurrentStepErrors();
+  }, [validateAndSetCurrentStepErrors]);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Enhanced struggling areas handler
+  const handleStrugglingAreasChangeWithValidation = (area: string, checked: boolean) => {
+    handleStrugglingAreasChange(area, checked);
+    
+    // Trigger validation after change
+    setTimeout(() => {
+      validateAndSetCurrentStepErrors();
+    }, 100);
+  };
+
+  // Enhanced preferred timing handler
+  const handlePreferredTimingChangeWithValidation = (timing: string, checked: boolean) => {
+    handlePreferredTimingChange(timing, checked);
+    
+    // Trigger validation after change
+    setTimeout(() => {
+      validateAndSetCurrentStepErrors();
+    }, 100);
+  };
 
   // Enhanced next step function that checks validation
   const handleNext = () => {
-    if (stepValidation.isStepValid()) {
+    const isValid = validateAndSetCurrentStepErrors();
+    
+    if (isValid) {
       nextStep();
-      stepValidation.clearValidations(); // Clear validations when moving to next step
     } else {
-      // Show validation errors
-      console.log('Step validation failed:', stepValidation.getStepErrors());
+      // Show validation errors in console for debugging
+      console.log('Step validation failed:', getCurrentStepValidationErrors());
     }
   };
 
   // Enhanced prev step function
   const handlePrev = () => {
     prevStep();
-    stepValidation.clearValidations(); // Clear validations when moving to prev step
   };
 
   // Render current step content
@@ -59,14 +117,16 @@ export default function FormRenderer({ formState }: FormRendererProps) {
     const commonProps = {
       formData,
       errors,
-      onInputChange: handleInputChange,
+      onInputChange: handleInputChangeWithValidation,
+      onBlur: handleBlurValidation,
       onNext: handleNext,
       onPrev: handlePrev,
-      onValidationChange: stepValidation.handleValidationChange,
       isFirstStep: currentStep === 1,
       isLastStep: currentStep === totalSteps,
-      isStepValid: stepValidation.isStepValid(),
-      submitting
+      submitting,
+      validationErrors: getCurrentStepValidationErrors(),
+      completedFieldsCount: getCompletedFieldsCount(),
+      totalFieldsCount: getTotalFieldsCount()
     };
 
     switch (currentStep) {
@@ -88,7 +148,7 @@ export default function FormRenderer({ formState }: FormRendererProps) {
           <Step4 
             {...commonProps}
             strugglingAreas={formData.strugglingAreas || []}
-            onStrugglingAreasChange={handleStrugglingAreasChange}
+            onStrugglingAreasChange={handleStrugglingAreasChangeWithValidation}
           />
         );
       case 5:
@@ -99,11 +159,12 @@ export default function FormRenderer({ formState }: FormRendererProps) {
         return (
           <Step7 
             {...commonProps}
+            getAllValidationErrors={getAllValidationErrors()}
             photoFile={photoFile}
             photoPreview={photoPreview}
             onPhotoChange={handlePhotoChange}
             preferredTiming={formData.preferredTiming || []}
-            onPreferredTimingChange={handlePreferredTimingChange}
+            onPreferredTimingChange={handlePreferredTimingChangeWithValidation}
           />
         );
       default:
