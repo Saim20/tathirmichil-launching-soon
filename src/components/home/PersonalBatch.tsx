@@ -16,7 +16,7 @@ const PersonalBatch = () => {
       icon: <BookOpen className="h-8 w-8" />,
     },
     {
-      title: "Regular Mock Tests",
+      title: "Regular Tests",
       description:
         "Regular Mock tests with detailed analytics, individual passing bar, leaderboard, and personal recommendations. Challenge your friends to 1v1 mock tests or sit for practice sets at your own pace.",
       icon: <Target className="h-8 w-8" />,

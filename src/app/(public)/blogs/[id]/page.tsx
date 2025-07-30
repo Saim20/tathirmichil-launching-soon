@@ -110,7 +110,7 @@ const BlogDetailsPage = () => {
             />
 
             {/* Blog Image */}
-            <div className="relative aspect-video h-48 md:h-64 lg:h-80 bg-tathir-cream rounded-xl overflow-hidden border-4 border-tathir-maroon/20">
+            <div className="relative w-full h-48 md:h-64 lg:h-80 bg-tathir-cream rounded-xl overflow-hidden border-4 border-tathir-maroon/20">
               <Image
                 src={blog.imageUrl || "/villager.png"}
                 alt={extractTextContent(blog.title)}

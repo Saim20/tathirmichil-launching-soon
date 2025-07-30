@@ -52,7 +52,7 @@ const IBAResources = () => {
               className="group w-full max-w-sm mx-auto lg:max-w-md xl:max-w-lg bg-tathir-beige rounded-xl transform hover:scale-[1.02] transition-all duration-300 relative
                       [box-shadow:1px_1px_0_#7a4f3a,2px_2px_0_#7a4f3a,3px_3px_0_#7a4f3a,4px_4px_0_#7a4f3a,5px_5px_0_#7a4f3a,6px_6px_1px_rgba(0,0,0,.1)] sm:[box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]"
             >
-              <div className="aspect-[3/4] w-full">
+              <div className="aspect-[5/6] w-full">
                 {loading ? (
                   <div className="w-full h-full bg-gray-200 animate-pulse rounded-xl"></div>
                 ) : (

@@ -13,13 +13,30 @@ const TestimonialModal: React.FC<{
 }> = ({ testimonial, isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen) {
+      // Store current scroll position before preventing scroll
+      const scrollY = window.scrollY;
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     } else {
-      document.body.style.overflow = 'unset';
+      // Restore scroll position when closing
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
     
     return () => {
-      document.body.style.overflow = 'unset';
+      // Cleanup on unmount
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
     };
   }, [isOpen]);
 
@@ -43,54 +60,100 @@ const TestimonialModal: React.FC<{
   if (!isOpen || !testimonial) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      className="z-50" 
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        minWidth: '100vw',
+        minHeight: '100vh',
+        margin: 0,
+        padding: 0
+      }}
+    >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-200"
+        className="bg-black/70 backdrop-blur-sm transition-opacity duration-200"
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          minWidth: '100vw',
+          minHeight: '100vh',
+          margin: 0,
+          padding: 0
+        }}
         onClick={onClose}
       />
       
-      {/* Modal Content */}
-      <div className="relative bg-tathir-beige rounded-2xl p-6 sm:p-8 lg:p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-tathir-brown/20 transition-all duration-200 transform scale-100">
-        {/* Decorative corner element */}
-        <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-tathir-maroon/10 to-transparent rounded-bl-2xl"></div>
-        
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-tathir-maroon hover:text-tathir-brown transition-colors duration-200 hover:bg-tathir-maroon/10 rounded-full z-10"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="text-center mb-6">
-          <div className="bg-gradient-to-r from-tathir-maroon to-tathir-brown p-4 rounded-full shadow-lg mx-auto w-fit mb-4">
-            <Quote className="h-8 w-8 text-tathir-beige" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-tathir-maroon mb-2">
-            {testimonial.name}
-          </h3>
-          <p className="text-sm sm:text-base text-tathir-brown jersey-10-regular font-medium">
-            {testimonial.role}
-          </p>
-        </div>
-
-        {/* Full Quote */}
-        <div className="mb-6 p-4 bg-tathir-cream/20 rounded-lg border-l-4 border-tathir-maroon">
-          <p className="text-base sm:text-lg jersey-10-regular leading-relaxed text-tathir-dark-green">
-            "{testimonial.quote}"
-          </p>
-        </div>
-
-        {/* Close Button */}
-        <div className="text-center">
+      {/* Modal Container */}
+      <div 
+        className="flex items-center justify-center p-4" 
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          minWidth: '100vw',
+          minHeight: '100vh',
+          margin: 0,
+          padding: '16px'
+        }}
+      >
+        {/* Modal Content */}
+        <div className="relative bg-tathir-beige rounded-2xl p-6 sm:p-8 lg:p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-tathir-brown/20 transition-all duration-200 transform scale-100 z-10">
+          {/* Decorative corner element */}
+          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-tathir-maroon/10 to-transparent rounded-bl-2xl"></div>
+          
+          {/* Close Button */}
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-tathir-maroon hover:bg-tathir-brown text-tathir-beige rounded-lg transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="absolute top-4 right-4 p-2 text-tathir-maroon hover:text-tathir-brown transition-colors duration-200 hover:bg-tathir-maroon/10 rounded-full z-10"
           >
-            Close
+            <X className="w-5 h-5" />
           </button>
+
+          {/* Modal Header */}
+          <div className="text-center mb-6">
+            <div className="bg-gradient-to-r from-tathir-maroon to-tathir-brown p-4 rounded-full shadow-lg mx-auto w-fit mb-4">
+              <Quote className="h-8 w-8 text-tathir-beige" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-tathir-maroon mb-2">
+              {testimonial.name}
+            </h3>
+            <p className="text-sm sm:text-base text-tathir-brown jersey-10-regular font-medium">
+              {testimonial.role}
+            </p>
+          </div>
+
+          {/* Full Quote */}
+          <div className="mb-6 p-4 bg-tathir-cream/20 rounded-lg border-l-4 border-tathir-maroon">
+            <p className="text-base sm:text-lg jersey-10-regular leading-relaxed text-tathir-dark-green">
+              "{testimonial.quote}"
+            </p>
+          </div>
+
+          {/* Close Button */}
+          <div className="text-center">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 bg-tathir-maroon hover:bg-tathir-brown text-tathir-beige rounded-lg transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -151,7 +214,10 @@ const TestimonialCard: React.FC<{
         {isLongQuote && (
           <div className="flex justify-center mb-4">
             <button
-              onClick={onReadMore}
+              onClick={(e) => {
+                e.preventDefault();
+                onReadMore();
+              }}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-tathir-maroon/10 to-tathir-brown/10 hover:from-tathir-maroon/20 hover:to-tathir-brown/20 text-tathir-maroon hover:text-tathir-brown rounded-lg transition-all duration-300 font-medium border border-tathir-maroon/20 hover:border-tathir-maroon/40 shadow-sm hover:shadow-md transform hover:scale-105"
             >
               <BookOpen className="w-4 h-4" />
@@ -188,8 +254,14 @@ const Testimonials: React.FC<{ variant?: 'home' | 'batch' }> = ({ variant = 'hom
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = (testimonial: Testimonial) => {
+    // Store current scroll position
+    const scrollY = window.scrollY;
     setSelectedTestimonial(testimonial);
     setIsModalOpen(true);
+    // Restore scroll position after modal opens
+    setTimeout(() => {
+      window.scrollTo(0, scrollY);
+    }, 0);
   };
 
   const closeModal = () => {

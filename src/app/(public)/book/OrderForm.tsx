@@ -1,12 +1,27 @@
 "use client";
 
-import { useState } from 'react';
-import { X, Loader2, Copy, User, Phone, Mail, MapPin, Building, StickyNote, Check, Truck, Plus, Minus, Package } from 'lucide-react';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/firebase';
-import { toast } from 'sonner';
-import { InfoCard } from '@/components/shared/data/InfoCard';
-import { bloxat } from '@/components/fonts';
+import { useState } from "react";
+import {
+  X,
+  Loader2,
+  Copy,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Building,
+  StickyNote,
+  Check,
+  Truck,
+  Plus,
+  Minus,
+  Package,
+} from "lucide-react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/firebase";
+import { toast } from "sonner";
+import { InfoCard } from "@/components/shared/data/InfoCard";
+import { bloxat } from "@/components/fonts";
 
 interface OrderFormProps {
   price: number;
@@ -21,27 +36,27 @@ interface FormData {
   city: string;
   postalCode: string;
   quantity: number;
-  deliveryZone: 'inside-dhaka' | 'dhaka-suburban' | 'outside-dhaka';
+  deliveryZone: "inside-dhaka" | "dhaka-suburban" | "outside-dhaka";
   notes?: string;
 }
 
 export default function OrderForm({ price, onClose }: OrderFormProps) {
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-    city: '',
-    postalCode: '',
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    postalCode: "",
     quantity: 1,
-    deliveryZone: 'inside-dhaka',
-    notes: '',
+    deliveryZone: "inside-dhaka",
+    notes: "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [orderId, setOrderId] = useState<string>('');
+  const [orderId, setOrderId] = useState<string>("");
   const [orderSummary, setOrderSummary] = useState<{
     totalAmount: number;
     deliveryCharge: number;
@@ -51,11 +66,11 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
   // Calculate delivery charge based on zone
   const getDeliveryCharge = (zone: string) => {
     switch (zone) {
-      case 'inside-dhaka':
+      case "inside-dhaka":
         return 90;
-      case 'dhaka-suburban':
+      case "dhaka-suburban":
         return 120;
-      case 'outside-dhaka':
+      case "outside-dhaka":
         return 150;
       default:
         return 90;
@@ -65,42 +80,49 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
   // Get delivery zone label
   const getDeliveryZoneLabel = (zone: string) => {
     switch (zone) {
-      case 'inside-dhaka':
-        return 'Inside Dhaka';
-      case 'dhaka-suburban':
-        return 'Dhaka Suburban';
-      case 'outside-dhaka':
-        return 'Outside Dhaka';
+      case "inside-dhaka":
+        return "Inside Dhaka";
+      case "dhaka-suburban":
+        return "Dhaka Suburban";
+      case "outside-dhaka":
+        return "Outside Dhaka";
       default:
-        return 'Inside Dhaka';
+        return "Inside Dhaka";
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       // Basic validation
-      if (!formData.name || !formData.phone || !formData.address || !formData.city || !formData.email || !formData.postalCode) {
-        throw new Error('Please fill in all required fields');
+      if (
+        !formData.name ||
+        !formData.phone ||
+        !formData.address ||
+        !formData.city ||
+        !formData.email ||
+        !formData.postalCode
+      ) {
+        throw new Error("Please fill in all required fields");
       }
 
       // Quantity validation
       if (formData.quantity < 1) {
-        throw new Error('Quantity must be at least 1');
+        throw new Error("Quantity must be at least 1");
       }
 
       // Phone number validation (Bangladesh format)
       const phoneRegex = /^(\+88)?01[3-9]\d{8}$/;
-      if (!phoneRegex.test(formData.phone.replace(/\s+/g, ''))) {
-        throw new Error('Please enter a valid Bangladesh phone number');
+      if (!phoneRegex.test(formData.phone.replace(/\s+/g, ""))) {
+        throw new Error("Please enter a valid Bangladesh phone number");
       }
 
       // Email validation (if provided)
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        throw new Error('Please enter a valid email address');
+        throw new Error("Please enter a valid email address");
       }
 
       // Calculate total price
@@ -109,50 +131,51 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
       const totalAmount = totalBookPrice + deliveryCharge;
 
       // Create order document
-      const orderDoc = await addDoc(collection(db, 'book-orders'), {
+      const orderDoc = await addDoc(collection(db, "book-orders"), {
         ...formData,
         price: totalBookPrice,
         unitPrice: price,
         deliveryCharge: deliveryCharge,
         deliveryZoneLabel: getDeliveryZoneLabel(formData.deliveryZone),
         totalAmount: totalAmount,
-        status: 'pending',
+        status: "pending",
         createdAt: serverTimestamp(),
         orderNumber: `BO-${Date.now()}`,
-        deliveryMethod: 'home' // Always home delivery
+        deliveryMethod: "home", // Always home delivery
       });
 
       setOrderId(orderDoc.id);
       setOrderSummary({
         totalAmount: totalAmount,
         deliveryCharge: deliveryCharge,
-        deliveryZone: getDeliveryZoneLabel(formData.deliveryZone)
+        deliveryZone: getDeliveryZoneLabel(formData.deliveryZone),
       });
       setSuccess(true);
-      toast.success('Order placed successfully!');
-
+      toast.success("Order placed successfully!");
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
-      toast.error(err.message || 'Failed to place order');
+      setError(err.message || "Something went wrong. Please try again.");
+      toast.error(err.message || "Failed to place order");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError(''); // Clear error when user starts typing
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(""); // Clear error when user starts typing
   };
 
   const handleQuantityChange = (increment: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      quantity: increment 
-        ? prev.quantity + 1
-        : Math.max(prev.quantity - 1, 1)
+      quantity: increment ? prev.quantity + 1 : Math.max(prev.quantity - 1, 1),
     }));
-    setError('');
+    setError("");
   };
 
   if (success) {
@@ -165,19 +188,27 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
           content={
             <div className="space-y-4 text-center">
               <p className="text-tathir-brown">
-                Your order has been placed successfully. Thanks for your enthusiasm and patience. The book is on print.
+                The book is on print. After we get our hands on it, we’ll give
+                it to the delivery services to send to you. They’ll contact you
+                in your phone number. Save this ID if you want to track the
+                order from the <a href="https://tathirmichil.com/track" className="text-tathir-dark-green underline">Tracking</a>{" "}
+                page.
               </p>
-              
+
               <div className="bg-tathir-cream p-4 rounded-lg border border-tathir-brown/20">
-                <p className={`text-sm font-bold text-tathir-dark-green mb-2 ${bloxat.className}`}>
+                <p
+                  className={`text-sm font-bold text-tathir-dark-green mb-2 ${bloxat.className}`}
+                >
                   Order ID:
                 </p>
                 <div className="flex items-center justify-between bg-tathir-beige p-2 rounded border">
-                  <span className="text-tathir-dark-green font-mono text-sm">{orderId}</span>
+                  <span className="text-tathir-dark-green font-mono text-sm">
+                    {orderId}
+                  </span>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(orderId);
-                      toast.success('Order ID copied to clipboard');
+                      toast.success("Order ID copied to clipboard");
                     }}
                     className="p-1 text-tathir-dark-green hover:text-tathir-brown transition-colors"
                   >
@@ -187,7 +218,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
               </div>
 
               <div className="bg-tathir-cream p-4 rounded-lg border border-tathir-brown/20">
-                <h4 className={`font-bold text-tathir-dark-green mb-2 flex items-center gap-2 ${bloxat.className}`}>
+                <h4
+                  className={`font-bold text-tathir-dark-green mb-2 flex items-center gap-2 ${bloxat.className}`}
+                >
                   <Truck className="w-4 h-4" />
                   What's Next?
                 </h4>
@@ -196,7 +229,11 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                   <li>• Pay cash on delivery</li>
                   <li>• Keep your Order ID for reference</li>
                   {orderSummary && (
-                    <li>• Total amount: ৳{orderSummary.totalAmount.toLocaleString()} ({orderSummary.deliveryZone})</li>
+                    <li>
+                      • Total amount: ৳
+                      {orderSummary.totalAmount.toLocaleString()} (
+                      {orderSummary.deliveryZone})
+                    </li>
                   )}
                 </ul>
               </div>
@@ -225,8 +262,12 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
             {/* Close button */}
             <div className="flex justify-between items-center">
               <div className="space-y-1">
-                <p className="text-tathir-brown text-sm">Home Delivery • Cash on Delivery</p>
-                <p className={`text-2xl font-bold text-tathir-dark-green ${bloxat.className}`}>
+                <p className="text-tathir-brown text-sm">
+                  Home Delivery • Cash on Delivery
+                </p>
+                <p
+                  className={`text-2xl font-bold text-tathir-dark-green ${bloxat.className}`}
+                >
                   ৳ {price.toLocaleString()} per book
                 </p>
               </div>
@@ -247,7 +288,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <User className="w-4 h-4" />
                   Full Name *
                 </label>
@@ -264,7 +307,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Phone Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <Phone className="w-4 h-4" />
                   Phone Number *
                 </label>
@@ -281,7 +326,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Email Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <Mail className="w-4 h-4" />
                   Email Address *
                 </label>
@@ -298,7 +345,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Address Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <MapPin className="w-4 h-4" />
                   Full Address *
                 </label>
@@ -315,7 +364,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* City Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <Building className="w-4 h-4" />
                   City/District *
                 </label>
@@ -332,7 +383,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Postal Code Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <MapPin className="w-4 h-4" />
                   Postal Code *
                 </label>
@@ -349,7 +402,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Delivery Zone Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <Truck className="w-4 h-4" />
                   Delivery Zone *
                 </label>
@@ -371,7 +426,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Quantity Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <Package className="w-4 h-4" />
                   Quantity
                 </label>
@@ -401,7 +458,9 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
               {/* Notes Field */}
               <div>
-                <label className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}>
+                <label
+                  className={`flex items-center gap-2 text-tathir-dark-green font-bold mb-2 ${bloxat.className}`}
+                >
                   <StickyNote className="w-4 h-4" />
                   Additional Notes
                 </label>
@@ -437,18 +496,24 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
 
             {/* Order Summary */}
             <div className="bg-tathir-cream p-4 rounded-lg border border-tathir-brown/20">
-              <h4 className={`font-bold text-tathir-dark-green mb-3 ${bloxat.className}`}>
+              <h4
+                className={`font-bold text-tathir-dark-green mb-3 ${bloxat.className}`}
+              >
                 Order Summary:
               </h4>
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-tathir-brown">
                   <span>Complete IBA Guide × {formData.quantity}</span>
-                  <span className={`font-bold text-tathir-dark-green ${bloxat.className}`}>
+                  <span
+                    className={`font-bold text-tathir-dark-green ${bloxat.className}`}
+                  >
                     ৳ {(price * formData.quantity).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm text-tathir-brown">
-                  <span>Delivery ({getDeliveryZoneLabel(formData.deliveryZone)})</span>
+                  <span>
+                    Delivery ({getDeliveryZoneLabel(formData.deliveryZone)})
+                  </span>
                   <span className="text-tathir-dark-green font-bold">
                     ৳ {getDeliveryCharge(formData.deliveryZone)}
                   </span>
@@ -457,14 +522,20 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
                 <div className="flex justify-between items-center font-bold text-tathir-dark-green">
                   <span>Total (Cash on Delivery)</span>
                   <span className={bloxat.className}>
-                    ৳ {(price * formData.quantity + getDeliveryCharge(formData.deliveryZone)).toLocaleString()}
+                    ৳{" "}
+                    {(
+                      price * formData.quantity +
+                      getDeliveryCharge(formData.deliveryZone)
+                    ).toLocaleString()}
                   </span>
                 </div>
               </div>
-              
+
               <div className="mt-4 p-3 bg-tathir-beige rounded border border-tathir-brown/20">
                 <p className="text-xs text-tathir-brown">
-                  <strong>Note:</strong> For orders with multiple books, delivery charges may be adjusted during confirmation call based on total weight and size.
+                  <strong>Note:</strong> For orders with multiple books,
+                  delivery charges may be adjusted during confirmation call
+                  based on total weight and size.
                 </p>
               </div>
             </div>
