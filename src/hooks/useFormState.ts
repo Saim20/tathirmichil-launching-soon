@@ -101,11 +101,9 @@ export interface UseFormStateReturn {
     completedSteps: Set<number>;
     setCompletedSteps: React.Dispatch<React.SetStateAction<Set<number>>>;
 
-    // Validation functions
-    validateCurrentStepData: () => boolean;
-
     // Utilities
     getStepTitle: (step: number) => string;
+    isStepValid: (stepNumber: number) => boolean;
 }
 
 export const useFormState = (): UseFormStateReturn => {
@@ -122,7 +120,7 @@ export const useFormState = (): UseFormStateReturn => {
     const [submitSuccess, setSubmitSuccess] = useState<string>("");
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string>("");
-    
+
     // Submission status tracking
     const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>({
         status: 'unsubmitted',
@@ -273,7 +271,7 @@ export const useFormState = (): UseFormStateReturn => {
     // Set profile picture from user's auth profile if available
     useEffect(() => {
         console.log('Profile picture check:', { userProfile: userProfile?.profilePictureUrl, userPhotoURL: user?.photoURL, photoPreview, photoFile });
-        
+
         if (userProfile?.profilePictureUrl && !photoPreview && !photoFile) {
             console.log('Setting initial profile picture from user profile:', userProfile.profilePictureUrl);
             setPhotoPreview(userProfile.profilePictureUrl);
@@ -333,8 +331,8 @@ export const useFormState = (): UseFormStateReturn => {
                 }
                 // Only restore saved photo if it exists and is different from user's profile picture
                 // This prevents overriding the user's profile picture with empty/placeholder values
-                if (savedData.photoPreview && 
-                    savedData.photoPreview !== userProfile?.profilePictureUrl && 
+                if (savedData.photoPreview &&
+                    savedData.photoPreview !== userProfile?.profilePictureUrl &&
                     savedData.photoPreview !== user?.photoURL) {
                     setPhotoPreview(savedData.photoPreview);
                 }
@@ -371,8 +369,8 @@ export const useFormState = (): UseFormStateReturn => {
 
                         // Set photo preview if available from existing form data
                         // Only set if it's different from user's profile picture to avoid conflicts
-                        if (processedData.profilePictureUrl?.trim() && 
-                            processedData.profilePictureUrl !== userProfile?.profilePictureUrl && 
+                        if (processedData.profilePictureUrl?.trim() &&
+                            processedData.profilePictureUrl !== userProfile?.profilePictureUrl &&
                             processedData.profilePictureUrl !== user?.photoURL) {
                             setPhotoPreview(processedData.profilePictureUrl);
                             setCurrentPhotoUrl(processedData.profilePictureUrl); // Track current uploaded URL
@@ -515,7 +513,7 @@ export const useFormState = (): UseFormStateReturn => {
 
         // Don't clear errors immediately - let validation handle it
         // This prevents the flickering effect
-        
+
         // Clear general submit error when user starts typing
         if (submitError) {
             setSubmitError("");
@@ -632,13 +630,6 @@ export const useFormState = (): UseFormStateReturn => {
         }
     };
 
-    // Validate current step - simplified since validation is now handled by components
-    const validateCurrentStepData = (): boolean => {
-        // Always return true since validation is handled by form field components
-        // This function is kept for backwards compatibility
-        return true;
-    };
-
     // Check if a specific step is completed - simplified
     const isStepCompleted = (step: number): boolean => {
         // Check if step is in completed steps set
@@ -647,12 +638,10 @@ export const useFormState = (): UseFormStateReturn => {
 
     // Enhanced navigation functions with auto-save
     const nextStep = () => {
-        if (validateCurrentStepData()) {
-            // Mark current step as completed
-            setCompletedSteps(prev => new Set([...prev, currentStep]));
-            setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        // Mark current step as completed
+        setCompletedSteps(prev => new Set([...prev, currentStep]));
+        setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const prevStep = () => {
@@ -683,7 +672,7 @@ export const useFormState = (): UseFormStateReturn => {
     // Consolidated validation logic for any step
     const getStepValidationErrors = (stepNumber: number): StepValidationError[] => {
         const stepErrors: StepValidationError[] = [];
-        
+
         switch (stepNumber) {
             case 1:
                 if (!formData.fullName?.trim()) {
@@ -692,11 +681,20 @@ export const useFormState = (): UseFormStateReturn => {
                 if (!formData.emailAddress?.trim()) {
                     stepErrors.push({ field: 'emailAddress', message: 'Email Address is required' });
                 }
+                else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress.trim())) {
+                    stepErrors.push({ field: 'emailAddress', message: 'Please enter a valid email address' });
+                }
                 if (!formData.phoneNumber?.trim()) {
                     stepErrors.push({ field: 'phoneNumber', message: 'Phone Number is required' });
                 }
+                else if (!/^(\+8801|01)[3-9]\d{8}$/.test(formData.phoneNumber.trim().replace(/\s/g, ''))) {
+                    stepErrors.push({ field: 'phoneNumber', message: 'Please enter a valid Bangladeshi phone number' });
+                }
                 if (!formData.facebookProfile?.trim()) {
                     stepErrors.push({ field: 'facebookProfile', message: 'Facebook Profile is required' });
+                }
+                else if (!/^https?:\/\/(www\.)?(facebook|fb)\.com\/[a-zA-Z0-9._-]+\/?$/.test(formData.facebookProfile.trim())) {
+                    stepErrors.push({ field: 'facebookProfile', message: 'Please enter a valid Facebook profile URL' });
                 }
                 if (!formData.location?.trim()) {
                     stepErrors.push({ field: 'location', message: 'Current Location is required' });
@@ -790,7 +788,7 @@ export const useFormState = (): UseFormStateReturn => {
                 }
                 break;
         }
-        
+
         return stepErrors;
     };
 
@@ -798,12 +796,12 @@ export const useFormState = (): UseFormStateReturn => {
     const validateAndSetCurrentStepErrors = () => {
         const stepErrors = getStepValidationErrors(currentStep);
         const newErrors: FormValidationErrors = {};
-        
+
         // Convert StepValidationError[] to FormValidationErrors
         stepErrors.forEach(error => {
             newErrors[error.field] = error.message;
         });
-        
+
         setErrors(newErrors);
         return stepErrors.length === 0;
     };
@@ -823,6 +821,11 @@ export const useFormState = (): UseFormStateReturn => {
     // Get validation errors for current step (for step navigation display)
     const getCurrentStepValidationErrors = (): StepValidationError[] => {
         return getStepValidationErrors(currentStep);
+    };
+
+    const isStepValid = (stepNumber: number): boolean => {
+        const stepErrors = getStepValidationErrors(stepNumber);
+        return stepErrors.length === 0;
     };
 
     // Get completed fields count for current step
@@ -864,55 +867,14 @@ export const useFormState = (): UseFormStateReturn => {
         // Comprehensive validation before submission
         const validationErrors: string[] = [];
 
-        // Step 1 - Basic Information (photo is handled separately)
-        if (!formData.fullName?.trim()) validationErrors.push("Full name is required");
-        if (!formData.emailAddress?.trim()) validationErrors.push("Email address is required");
-        if (!formData.phoneNumber?.trim()) validationErrors.push("Phone number is required");
-        if (!formData.facebookProfile?.trim()) validationErrors.push("Facebook profile is required");
-        if (!photoPreview && !photoFile) validationErrors.push("Profile picture is required");
+        Object.entries(getAllValidationErrors()).forEach(([field, message]) => {
+            if (message) {
+                validationErrors.push(`${field}: ${message}`);
+            }
+        });
 
-        // Step 2 - Academic Information
-        if (!formData.school?.trim()) validationErrors.push("School is required");
-        if (!formData.college?.trim()) validationErrors.push("College is required");
-        if (!formData.group) validationErrors.push("Group is required");
-        if (!formData.hscBatch) validationErrors.push("HSC batch is required");
-        if (!formData.academicDescription?.trim()) validationErrors.push("Academic background is required");
-
-        // Step 3 - Personal Questions
-        if (!formData.personalDescription?.trim()) validationErrors.push("Personal description is required");
-        if (!formData.whyIBA?.trim()) validationErrors.push("Why IBA question is required");
-        if (!formData.whyApplyingHere?.trim()) validationErrors.push("Why applying here question is required");
-        if (!formData.ifNotIBA?.trim()) validationErrors.push("Expectations question is required");
-
-        // Step 4 - Preparation Details
-        if (!formData.prepTimeline) validationErrors.push("Preparation timeline is required");
-        if (!formData.strugglingAreas || formData.strugglingAreas.length === 0) {
-            validationErrors.push("At least one struggling area must be selected");
-        }
-        if (!formData.fiveYearsVision?.trim()) validationErrors.push("Five years vision is required");
-        if (!formData.otherPlatforms?.trim()) validationErrors.push("Other platforms information is required");
-        if (!formData.admissionPlans?.trim()) validationErrors.push("Admission plans are required");
-
-        // Step 5 - Commitment
-        if (!formData.stableInternet) validationErrors.push("Internet stability selection is required");
-        if (!formData.videoCameraOn) validationErrors.push("Video camera preference is required");
-        if (!formData.attendClasses) validationErrors.push("Class attendance commitment is required");
-        if (!formData.activeParticipation) validationErrors.push("Participation commitment is required");
-        if (!formData.skipOtherCoachings) validationErrors.push("Other coaching commitment is required");
-        if (!formData.stickTillExam) validationErrors.push("Exam commitment is required");
-
-        // Step 6 - Reflection
-        if (!formData.recentFailure?.trim()) validationErrors.push("Recent failure reflection is required");
-        if (!formData.lastBookVideoArticle?.trim()) validationErrors.push("Last book/video/article information is required");
-
-        // Step 7 - Final Details
-        if (!formData.preferredTiming || formData.preferredTiming.length === 0) {
-            validationErrors.push("At least one preferred timing must be selected");
-        }
-        if (!formData.preferredBatchType) validationErrors.push("Preferred batch type is required");
-
+        if(validationErrors.length > 0) {
         // If there are validation errors, show them and don't submit
-        if (validationErrors.length > 0) {
             setSubmitError(`Please complete the following required fields:\n• ${validationErrors.join('\n• ')}`);
             setSubmitting(false);
             return;
@@ -1031,7 +993,7 @@ export const useFormState = (): UseFormStateReturn => {
 
         // Submission status
         submissionStatus,
-        getAllValidationErrors ,
+        getAllValidationErrors,
         getCurrentStepValidationErrors,
         getCompletedFieldsCount,
         getTotalFieldsCount,
@@ -1056,10 +1018,8 @@ export const useFormState = (): UseFormStateReturn => {
         completedSteps,
         setCompletedSteps,
 
-        // Validation functions
-        validateCurrentStepData,
-
         // Utilities
         getStepTitle,
+        isStepValid,
     };
 };

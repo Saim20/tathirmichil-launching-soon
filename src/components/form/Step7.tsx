@@ -134,6 +134,7 @@ export default function Step7({
         prevLabel="Back to Reflection"
         showSubmit={true}
         submitting={submitting}
+        isLastStep={true}
         submitLabel={
           submitting ? "Submitting Application..." : "Submit Application"
         }

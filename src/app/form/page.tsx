@@ -43,9 +43,7 @@ export default function PersonalBatchFormPage() {
     photoFile,
     photoPreview,
     submissionStatus,
-    getCurrentStepValidationErrors,
-    getCompletedFieldsCount,
-    getTotalFieldsCount
+    isStepValid,
   } = formState;
 
   // Helper function to check if any saved data exists
@@ -117,6 +115,7 @@ export default function PersonalBatchFormPage() {
           photoFile={photoFile}
           hasUnsavedChanges={hasUnsavedChanges}
           autoSaveStatus={autoSaveStatus}
+          isStepValid={isStepValid}
         />
 
         <form onSubmit={handleSubmit} className="space-y-8">

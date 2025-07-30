@@ -14,6 +14,7 @@ interface ProgressIndicatorProps {
   photoFile: File | null; // Add photo file for validation
   hasUnsavedChanges?: boolean; // Add unsaved changes indicator
   autoSaveStatus?: any; // Add auto-save status
+  isStepValid: (stepNumber: number) => boolean; // Function to check if a step is valid
 }
 
 export default function ProgressIndicator({
@@ -27,51 +28,13 @@ export default function ProgressIndicator({
   photoPreview,
   photoFile,
   hasUnsavedChanges = false,
-  autoSaveStatus
+  autoSaveStatus,
+  isStepValid
 }: ProgressIndicatorProps) {
   
   // Real-time validation function for each step
   const validateStepRealTime = React.useCallback((step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(formData.fullName?.trim() && 
-                 formData.emailAddress?.trim() && 
-                 formData.phoneNumber?.trim() && 
-                 formData.facebookProfile?.trim() &&
-                 (photoPreview?.trim() || photoFile));
-      case 2:
-        return !!(formData.school?.trim() && 
-                 formData.college?.trim() && 
-                 formData.group && 
-                 formData.hscBatch && 
-                 formData.academicDescription?.trim());
-      case 3:
-        return !!(formData.personalDescription?.trim() && 
-                 formData.whyIBA?.trim() && 
-                 formData.whyApplyingHere?.trim() && 
-                 formData.ifNotIBA?.trim());
-      case 4:
-        return !!(formData.prepTimeline && 
-                 formData.strugglingAreas && formData.strugglingAreas.length > 0 &&
-                 formData.fiveYearsVision?.trim() && 
-                 formData.otherPlatforms?.trim() && 
-                 formData.admissionPlans?.trim());
-      case 5:
-        return !!(formData.stableInternet && 
-                 formData.videoCameraOn && 
-                 formData.attendClasses && 
-                 formData.activeParticipation && 
-                 formData.skipOtherCoachings && 
-                 formData.stickTillExam);
-      case 6:
-        return !!(formData.recentFailure?.trim() && 
-                 formData.lastBookVideoArticle?.trim());
-      case 7:
-        return !!(formData.preferredTiming && formData.preferredTiming.length > 0 && 
-                 formData.preferredBatchType);
-      default:
-        return false;
-    }
+    return isStepValid(step);
   }, [formData, photoPreview, photoFile]);
 
   // Calculate completed steps using real-time validation - memoized for performance
