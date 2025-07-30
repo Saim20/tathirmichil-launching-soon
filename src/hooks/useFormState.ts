@@ -8,7 +8,6 @@ import {
     uploadFormPhoto,
     checkExistingFormSubmission,
 } from "@/lib/apis/forms";
-import { validateForm, validateCurrentStep, getStepWithError } from "@/lib/utils/formValidation";
 import { storage } from "@/lib/firebase/firebase";
 import { ref, deleteObject } from "firebase/storage";
 
@@ -170,10 +169,61 @@ export const useFormState = (): UseFormStateReturn => {
         preferredTiming: [],
         preferredBatchType: "Regular",
         preferredStartDate: "ASAP",
+        selectedBatch: "",
     });
 
     // Direct auto-save implementation
     const storageKey = `tathir_form_latest_${user?.uid || 'anonymous'}`;
+
+    // Get default form data
+    const getDefaultFormData = (): Partial<PersonalBatchFormData> => ({
+        fullName: user?.displayName || "",
+        emailAddress: user?.email || "",
+        userId: user?.uid || "",
+        strugglingAreas: [],
+        group: "Science",
+        hscBatch: "25",
+        prepTimeline: "2-3 months",
+        stableInternet: "Yes",
+        videoCameraOn: "I agree",
+        attendClasses: "Always unless emergency",
+        activeParticipation: "Sure",
+        skipOtherCoachings: "Done",
+        stickTillExam: "Locked in",
+        preferredTiming: [],
+        preferredBatchType: "Regular",
+        preferredStartDate: "ASAP",
+        selectedBatch: "",
+    });
+
+    // Safely merge loaded data with defaults
+    const safelyMergeFormData = (loadedData: any): Partial<PersonalBatchFormData> => {
+        const defaults = getDefaultFormData();
+
+        if (!loadedData || typeof loadedData !== 'object') {
+            console.log('🛡️ Using default form data - invalid loaded data');
+            return defaults;
+        }
+
+        try {
+            // Merge loaded data with defaults, keeping defaults for missing fields
+            const merged = { ...defaults, ...loadedData };
+
+            // Ensure arrays are properly handled
+            if (!Array.isArray(merged.strugglingAreas)) {
+                merged.strugglingAreas = defaults.strugglingAreas;
+            }
+            if (!Array.isArray(merged.preferredTiming)) {
+                merged.preferredTiming = defaults.preferredTiming;
+            }
+
+            console.log('✅ Successfully merged loaded data with defaults');
+            return merged;
+        } catch (error) {
+            console.warn('🛡️ Error merging data, using defaults:', error);
+            return defaults;
+        }
+    };
 
     // Auto-save function
     const saveDataToLocalStorage = () => {
@@ -322,7 +372,7 @@ export const useFormState = (): UseFormStateReturn => {
             const savedData = loadSavedData();
             if (savedData?.formData) {
                 console.log('📥 Loading latest edits from localStorage');
-                setFormData(savedData.formData);
+                setFormData(safelyMergeFormData(savedData.formData));
                 if (savedData.currentStep) {
                     setCurrentStep(savedData.currentStep);
                 }
@@ -365,7 +415,7 @@ export const useFormState = (): UseFormStateReturn => {
 
                         // Load existing data into form state only if no localStorage data
                         console.log('📥 Loading data from database (no localStorage found)');
-                        setFormData(processedData);
+                        setFormData(safelyMergeFormData(processedData));
 
                         // Set photo preview if available from existing form data
                         // Only set if it's different from user's profile picture to avoid conflicts
@@ -401,7 +451,7 @@ export const useFormState = (): UseFormStateReturn => {
     useEffect(() => {
         if (isEditing && existingFormData && !loading && !hasLoadedExistingData) {
             console.log('Switching to edit mode, loading existing data:', existingFormData);
-            setFormData(existingFormData);
+            setFormData(safelyMergeFormData(existingFormData));
 
             // Load existing profile picture if available
             if ((existingFormData as any).profilePictureUrl?.trim()) {
@@ -417,12 +467,7 @@ export const useFormState = (): UseFormStateReturn => {
             // Mark all steps as completed if we have existing form data
             const allSteps = new Set<number>();
             for (let i = 1; i <= totalSteps; i++) {
-                const stepErrors = validateCurrentStep(
-                    existingFormData,
-                    i,
-                    null,
-                    (existingFormData as any).profilePictureUrl
-                );
+                const stepErrors = getStepValidationErrors(i);
                 if (Object.keys(stepErrors).length === 0) {
                     allSteps.add(i);
                 }
@@ -480,8 +525,7 @@ export const useFormState = (): UseFormStateReturn => {
                     return !!(formData.recentFailure?.trim() &&
                         formData.lastBookVideoArticle?.trim());
                 case 7:
-                    return !!(formData.preferredTiming && formData.preferredTiming.length > 0 &&
-                        formData.preferredBatchType);
+                    return !!(formData.selectedBatch?.trim());
                 default:
                     return false;
             }
@@ -780,11 +824,8 @@ export const useFormState = (): UseFormStateReturn => {
                 }
                 break;
             case 7:
-                if (!formData.preferredTiming || formData.preferredTiming.length === 0) {
-                    stepErrors.push({ field: 'preferredTiming', message: 'Preferred Timing selection is required' });
-                }
-                if (!formData.preferredBatchType) {
-                    stepErrors.push({ field: 'preferredBatchType', message: 'Preferred Batch Type is required' });
+                if (!formData.selectedBatch?.trim()) {
+                    stepErrors.push({ field: 'selectedBatch', message: 'Batch selection is required' });
                 }
                 break;
         }
@@ -844,7 +885,7 @@ export const useFormState = (): UseFormStateReturn => {
             case 4: return 5; // prepTimeline, strugglingAreas, fiveYearsVision, otherPlatforms, admissionPlans
             case 5: return 6; // stableInternet, videoCameraOn, attendClasses, activeParticipation, skipOtherCoachings, stickTillExam
             case 6: return 2; // recentFailure, lastBookVideoArticle
-            case 7: return 2; // preferredTiming, preferredBatchType
+            case 7: return 1; // selectedBatch
             default: return 0;
         }
     };
@@ -873,8 +914,8 @@ export const useFormState = (): UseFormStateReturn => {
             }
         });
 
-        if(validationErrors.length > 0) {
-        // If there are validation errors, show them and don't submit
+        if (validationErrors.length > 0) {
+            // If there are validation errors, show them and don't submit
             setSubmitError(`Please complete the following required fields:\n• ${validationErrors.join('\n• ')}`);
             setSubmitting(false);
             return;

@@ -67,40 +67,23 @@ export default function Step7({
         />
 
         <FormField
-          id="preferredStartDate"
-          label="When do you prefer to start classes?"
+          id="selectedBatch"
+          label="Select Batch"
           icon={<FaCalendarAlt />}
-          value={formData.preferredStartDate || ""}
-          onChange={(value) => onInputChange("preferredStartDate", value)}
-          placeholder='Enter date (e.g., "Next Monday") or "ASAP"'
-          errors={errors}
-        />
-
-        <CheckboxGroup
-          id="preferredTiming"
-          label="Preferred class timing (select all that apply)"
-          options={timingOptions}
-          onBlur={onBlur}
-          required
-          selectedValues={preferredTiming}
-          onChange={onPreferredTimingChange}
-          tip="Choose all time slots that work for you"
-        />
-
-        <FormField
-          id="preferredBatchType"
-          label="Preferred batch type"
-          icon={<FaClock />}
           type="select"
           onBlur={onBlur}
           required
-          value={formData.preferredBatchType || "Regular"}
-          onChange={(value) => onInputChange("preferredBatchType", value)}
+          value={formData.selectedBatch || ""}
+          onChange={(value) => onInputChange("selectedBatch", value)}
           options={[
-            { value: "Regular", label: "Regular" },
-            { value: "Crash", label: "Crash" }
+            { value: "", label: "Choose a batch..." },
+            { value: "Batch 4.1 - 10-12 PM - Sat, Tue - starts on Aug 23", label: "Batch 4.1 - 10-12 PM - Sat, Tue - starts on Aug 23" },
+            { value: "Batch 4.2 - 7-9 PM - Sat, Tue - starts on Aug 26", label: "Batch 4.2 - 7-9 PM - Sat, Tue - starts on Aug 26" },
+            { value: "Batch 4.3 - 10-12 PM - Sun, Wed - starts on Aug 27", label: "Batch 4.3 - 10-12 PM - Sun, Wed - starts on Aug 27" },
+            { value: "Crash Batch - 10-12 PM - starts after BUP circular", label: "Crash Batch - 10-12 PM - starts after BUP circular" }
           ]}
           errors={errors}
+          tip="(Subject to change)"
         />
       </div>
 

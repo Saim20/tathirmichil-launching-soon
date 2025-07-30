@@ -46,6 +46,7 @@ export interface PersonalBatchFormData {
   preferredStartDate: string;
   preferredTiming: string[];
   preferredBatchType: 'Crash' | 'Regular';
+  selectedBatch: string;
 
   // Metadata
   userId: string;
