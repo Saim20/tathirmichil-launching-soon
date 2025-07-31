@@ -737,9 +737,6 @@ export const useFormState = (): UseFormStateReturn => {
                 if (!formData.facebookProfile?.trim()) {
                     stepErrors.push({ field: 'facebookProfile', message: 'Facebook Profile is required' });
                 }
-                else if (!/^https?:\/\/(www\.)?(facebook|fb)\.com\/[a-zA-Z0-9._-]+\/?$/.test(formData.facebookProfile.trim())) {
-                    stepErrors.push({ field: 'facebookProfile', message: 'Please enter a valid Facebook profile URL' });
-                }
                 if (!formData.location?.trim()) {
                     stepErrors.push({ field: 'location', message: 'Current Location is required' });
                 }

@@ -46,27 +46,6 @@ export default function PersonalBatchFormPage() {
     isStepValid,
   } = formState;
 
-  // Helper function to check if any saved data exists
-  const hasAnySavedData = () => {
-    const savedDataInfo = getSavedDataInfo();
-    return savedDataInfo.exists && !savedDataInfo.isExpired;
-  };
-
-  // Helper function to restore saved data
-  const restoreSavedData = () => {
-    const savedData = loadSavedData();
-    if (savedData?.formData) {
-      formState.setFormData(savedData.formData);
-      if (savedData.currentStep) {
-        setCurrentStep(savedData.currentStep);
-      }
-      if (savedData.completedSteps) {
-        setCompletedSteps(new Set(savedData.completedSteps));
-      }
-      console.log('🔄 Restored saved data from localStorage');
-    }
-  };
-
   // Show loading view
   if (loading) {
     return <LoadingView />;

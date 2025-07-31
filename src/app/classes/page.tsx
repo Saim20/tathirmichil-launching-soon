@@ -312,17 +312,35 @@ const ClassesPage = () => {
             >
               Course Curriculum
             </h1>
-            <p className="text-xl jersey-10-regular text-tathir-brown max-w-3xl mx-auto leading-relaxed">
-              Throughout my course, we follow this golden formula for each
-              topic: Learn. Practice. Test. You start by learning the core ideas
-              in class: concepts, formulas, shortcuts, and approaches. Right
-              after the class, there’s a quick test to check how much of it you
-              actually learned. During the week, you practice the same topic
-              with the topic-wise practice sets on our website. Each Friday, we
-              hold a live mock on the assigned topics with a leaderboard so you
-              can see exactly where you stand. We keep rolling through the
-              entire IBA syllabus in this flow until every topic feels familiar.
-            </p>
+
+            {selectedBatch === "regular" ? (
+              <p className="text-xl jersey-10-regular text-tathir-brown mx-auto leading-relaxed">
+                Throughout my course, we follow this golden formula for each
+                topic: Learn. Practice. Test. You start by learning the core
+                ideas in class: concepts, formulas, shortcuts, and approaches.
+                Right after the class, there’s a quick test to check how much of
+                it you actually learned. During the week, you practice the same
+                topic with the topic-wise practice sets on our website. Each
+                Friday, we hold a live mock on the assigned topics with a
+                leaderboard so you can see exactly where you stand. We keep
+                rolling through the entire IBA syllabus in this flow until every
+                topic feels familiar.
+              </p>
+            ) : (
+              <p className="text-xl jersey-10-regular leading-relaxed text-tathir-brown mx-auto">
+                The Crash Course starts around one month or so before the IBA
+                Admission test (a few weeks before BUP). The purpose of this
+                course is to familiarize the aspirants with all of the common
+                topics tested in the test, show the approaches and shortcuts to
+                each, and prepare them for the final run within the very last
+                moment. The classes are focused on the frequently tested
+                questions in IBA and BUP so that we can ensure the passing bar
+                in each section without going through hundreds of resources and
+                theories. You also get one-month of access to tathirmichil.com
+                to sit for topic tests, 1 vs 1 challenges, and live full-length
+                mock tests that rank you against the best IBA candidates.
+              </p>
+            )}
           </div>
         </AnimatedSection>
 
@@ -418,19 +436,19 @@ const ClassesPage = () => {
         </div>
 
         {/* Additional Information */}
-        <AnimatedSection>
-          <div className="text-center space-y-8">
-            <h2
-              className={`text-3xl md:text-4xl font-bold text-tathir-maroon mb-4 mt-15 ${bloxat.className} uppercase`}
-            >
-              Additional Information
-            </h2>
-            <div
-              className="bg-tathir-beige rounded-xl p-8 
+        {selectedBatch === "regular" ? (
+          <AnimatedSection>
+            <div className="text-center space-y-8">
+              <h2
+                className={`text-3xl md:text-4xl font-bold text-tathir-maroon mb-4 mt-15 ${bloxat.className} uppercase`}
+              >
+                Additional Information
+              </h2>
+              <div
+                className="bg-tathir-beige rounded-xl p-8 
               [box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]"
-            >
-              <div className="text-tathir-brown space-y-6">
-                {selectedBatch === "regular" ? (
+              >
+                <div className="text-tathir-brown space-y-6">
                   <p className="text-xl jersey-10-regular leading-relaxed">
                     We'll have 8 classes per month and 24 classes in this course
                     (atleast). You can see 21 of them listed above. Some of
@@ -439,28 +457,13 @@ const ClassesPage = () => {
                     process. Be consistent. If you follow my guidelines to the
                     point, I believe you'll ace every test you encounter.
                   </p>
-                ) : (
-                  <>
-                    <p className="text-xl jersey-10-regular leading-relaxed">
-                      The Crash Course starts around one month or so before the
-                      IBA Admission test (a few weeks before BUP). The purpose
-                      of this course is to familiarize the aspirants with all of
-                      the common topics tested in the test, show the approaches
-                      and shortcuts to each, and prepare them for the final run
-                      within the very last moment. The classes are focused on
-                      the frequently tested questions in IBA and BUP so that we
-                      can ensure the passing bar in each section without going
-                      through hundreds of resources and theories. You also get
-                      one-month of access to tathirmichil.com to sit for topic
-                      tests, 1 vs 1 challenges, and live full-length mock tests
-                      that rank you against the best IBA candidates.
-                    </p>
-                  </>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-        </AnimatedSection>
+          </AnimatedSection>
+        ) : (
+          <></>
+        )}
 
         {/* Call to Action */}
         <AnimatedSection>
@@ -473,23 +476,19 @@ const ClassesPage = () => {
             <div className=" rounded-xl p-4 ">
               <div className="space-y-8">
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                  {currentClasses === regularClasses ? (
-                    <a
-                      href="/form"
-                      className={`group px-10 py-5 bg-tathir-maroon text-tathir-beige font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] 
+                  <Link
+                    href="/form"
+                    className={`group px-10 py-5 bg-tathir-maroon text-tathir-beige font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] 
                       [box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]
                       inline-flex items-center justify-center gap-2 relative overflow-hidden ${bloxat.className}`}
-                    >
-                      <span className="flex items-center justify-center uppercase relative z-10 text-lg">
-                        Enroll Now
-                        <ChevronRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform duration-300" />
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    </a>
-                  ) : (
-                    <></>
-                  )}
-                  <a
+                  >
+                    <span className="flex items-center justify-center uppercase relative z-10 text-lg">
+                      Enroll Now
+                      <ChevronRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform duration-300" />
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                  </Link>
+                  <Link
                     href="/batch"
                     className={`group px-10 py-5 bg-tathir-beige text-tathir-maroon font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] 
                       [box-shadow:2px_2px_0_#7a4f3a,4px_4px_0_#7a4f3a,6px_6px_0_#7a4f3a,8px_8px_0_#7a4f3a,10px_10px_0_#7a4f3a,12px_12px_1px_rgba(0,0,0,.1)]
@@ -499,7 +498,7 @@ const ClassesPage = () => {
                       Learn More
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

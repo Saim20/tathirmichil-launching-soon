@@ -67,22 +67,26 @@ export default function SuccessView({
         >
           {userProfile?.approvalStatus === "accepted"
             ? "Welcome to the Batch!"
+            : userProfile?.approvalStatus === "rejected"
+            ? "Application Status"
             : `Application ${
-                existingFormData &&
-                existingFormData.submittedAt !== formData.submittedAt
-                  ? "Updated"
-                  : "Submitted"
+          existingFormData &&
+          existingFormData.submittedAt !== formData.submittedAt
+            ? "Updated"
+            : "Submitted"
               }!`}
         </h1>
 
         <p className="text-white opacity-90 mb-2 text-lg">
           {userProfile?.approvalStatus === "accepted"
             ? "Congratulations! You have been accepted"
+            : userProfile?.approvalStatus === "rejected"
+            ? "We appreciate your interest in our program"
             : `Your application has been ${
-                existingFormData &&
-                existingFormData.submittedAt !== formData.submittedAt
-                  ? "updated"
-                  : "submitted"
+          existingFormData &&
+          existingFormData.submittedAt !== formData.submittedAt
+            ? "updated"
+            : "submitted"
               } successfully!`}
         </p>
 
@@ -104,12 +108,12 @@ export default function SuccessView({
           }
           ${
             userProfile?.approvalStatus === "rejected"
-              ? "bg-tathir-red/20 text-tathir-red"
+              ? "bg-tathir-error/20 text-tathir-error"
               : ""
           }
           ${
             userProfile?.approvalStatus === "unsure"
-              ? "bg-tathir-yellow/20 text-tathir-yellow"
+              ? "bg-tathir-gold/20 text-tathir-gold"
               : ""
           }
         `}
@@ -120,8 +124,8 @@ export default function SuccessView({
               userProfile?.approvalStatus === "accepted"
                 ? "bg-tathir-light-green"
                 : userProfile?.approvalStatus === "rejected"
-                ? "bg-tathir-red"
-                : "bg-tathir-yellow"
+                ? "bg-tathir-error"
+                : "bg-tathir-gold"
             }`}
           ></div>
           Status:{" "}

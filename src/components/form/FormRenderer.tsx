@@ -126,7 +126,8 @@ export default function FormRenderer({ formState }: FormRendererProps) {
       submitting,
       validationErrors: getCurrentStepValidationErrors(),
       completedFieldsCount: getCompletedFieldsCount(),
-      totalFieldsCount: getTotalFieldsCount()
+      totalFieldsCount: getTotalFieldsCount(),
+      isStepValid: formState.isStepValid(currentStep),
     };
 
     switch (currentStep) {

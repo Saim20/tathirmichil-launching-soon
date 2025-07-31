@@ -1,6 +1,12 @@
 "use client";
 import React from "react";
-import { FaArrowLeft, FaArrowRight, FaSpinner, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaSpinner,
+  FaExclamationCircle,
+  FaCheckCircle,
+} from "react-icons/fa";
 import { buttonClassName, secondaryButtonClassName } from "./utils";
 import { FormValidationErrors } from "@/lib/models/form";
 
@@ -15,7 +21,7 @@ interface StepNavigationProps {
   submitting?: boolean;
   submitLabel?: string;
   submitIcon?: React.ReactNode;
-  validationErrors?: Array<{field: string; message: string}>;
+  validationErrors?: Array<{ field: string; message: string }>;
   completedFieldsCount?: number;
   totalFieldsCount?: number;
   allValidationErrors?: FormValidationErrors;
@@ -35,17 +41,43 @@ export default function StepNavigation({
   validationErrors = [],
   allValidationErrors,
 }: StepNavigationProps) {
-  
   // Calculate if step is valid based on validation errors
   let isStepValid: boolean = true;
-  if(isLastStep){
+  if (isLastStep) {
     isStepValid = Object.keys(allValidationErrors!).length === 0;
-  }else{
+  } else {
     isStepValid = Object.keys(validationErrors).length === 0;
   }
 
-  console.log(`Step Navigation - isStepValid: ${isStepValid}, validationErrors:`, validationErrors);
-  
+  const allErrors: {
+    field: string;
+    message: string;
+  }[] = [];
+
+  if (isLastStep) {
+    // Collect all validation errors for the last step
+    for (const field in allValidationErrors!) {
+      if (allValidationErrors![field].length > 0) {
+        allErrors.push({
+          field,
+          message: allValidationErrors![field],
+        });
+      }
+    }
+  } else {
+    // Collect validation errors for the current step
+    for (const error of validationErrors) {
+      allErrors.push({
+        field: error.field,
+        message: error.message,
+      });
+    }
+  }
+
+  console.log(
+    `Step Navigation - isStepValid: ${isStepValid}, validationErrors:`,
+    validationErrors
+  );
 
   const getNextButtonContent = () => {
     if (submitting) {
@@ -76,34 +108,43 @@ export default function StepNavigation({
 
   const getTooltipText = () => {
     if (!isStepValid && validationErrors.length > 0) {
-      return `Missing: ${validationErrors.map(e => e.field).join(', ')}`;
+      return `Missing: ${validationErrors.map((e) => e.field).join(", ")}`;
     }
-    return isStepValid ? 'Continue to next step' : 'Please complete all required fields';
+    return isStepValid
+      ? "Continue to next step"
+      : "Please complete all required fields";
   };
   return (
     <div className="space-y-4 mt-4">
       {/* Validation feedback */}
-      {!isStepValid && validationErrors.length > 0 && (
+      {!isStepValid && (
         <div className="tathir-glass-dark border border-red-500/30 rounded-2xl p-3 md:p-4 mt-6 md:mt-8 shadow-xl">
           <div className="flex items-start gap-2 md:gap-3">
             <FaExclamationCircle className="text-red-400 text-base md:text-lg mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-red-400 font-semibold mb-2 text-sm md:text-base">
-                {validationErrors.length === 1 
-                  ? 'Please fix this issue to continue:' 
-                  : `Please fix these ${validationErrors.length} issues to continue:`
-                }
+                {isLastStep
+                  ? "Please fix all issues"
+                  : allErrors.length === 1
+                  ? "Please fix this issue to continue:"
+                  : `Please fix these ${allErrors.length} issues to continue:`}
               </p>
               <ul className="text-red-300 text-xs md:text-sm space-y-1">
-                {validationErrors.slice(0, 8).map((error, index) => (
-                  <li key={`${error.field}-${index}`} className="flex items-start gap-2">
-                    <span className="text-red-400 font-bold flex-shrink-0">•</span>
+                {allErrors.slice(0, 8).map((error, index) => (
+                  <li
+                    key={`${error.field}-${index}`}
+                    className="flex items-start gap-2"
+                  >
+                    <span className="text-red-400 font-bold flex-shrink-0">
+                      •
+                    </span>
                     <span className="break-words">{error.message}</span>
                   </li>
                 ))}
-                {validationErrors.length > 8 && (
+                {allErrors.length > 8 && (
                   <li className="opacity-70 italic text-xs">
-                    • And {validationErrors.length - 8} more issue{validationErrors.length - 8 > 1 ? 's' : ''}...
+                    • And {allErrors.length - 8} more issue
+                    {allErrors.length - 8 > 1 ? "s" : ""}...
                   </li>
                 )}
               </ul>
@@ -128,12 +169,12 @@ export default function StepNavigation({
         ) : (
           <div className="hidden sm:block"></div>
         )}
-        
+
         {showSubmit ? (
           <button
             type="submit"
             className={`${buttonClassName} flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-2 ${
-              !isStepValid ? 'opacity-50 cursor-not-allowed' : ''
+              !isStepValid ? "opacity-50 cursor-not-allowed" : ""
             }`}
             disabled={submitting || !isStepValid}
             title={getTooltipText()}
