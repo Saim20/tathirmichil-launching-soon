@@ -5,6 +5,7 @@ import { AuthContext } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import React, { useContext, useState, Suspense } from "react";
 import { FaRegEye, FaRegEyeSlash, FaSpinner } from "react-icons/fa6";
+import { FcGoogle } from "react-icons/fc";
 
 const SignupPageContent: React.FC = () => {
   const { createUser, googleSignIn } = useContext(AuthContext)!;
@@ -38,19 +39,39 @@ const SignupPageContent: React.FC = () => {
       redirect();
     } catch (error: any) {
       console.error("Signup error:", error);
-      setError(error.message || "Failed to create account");
+      if (error.code === "auth/email-already-in-use") {
+        setError("An account with this email already exists");
+      } else if (error.code === "auth/invalid-email") {
+        setError("Please enter a valid email address");
+      } else if (error.code === "auth/weak-password") {
+        setError("Password is too weak. Please choose a stronger password");
+      } else if (error.code === "auth/operation-not-allowed") {
+        setError("Email/password accounts are not enabled");
+      } else {
+        setError(error.message || "Failed to create account");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
     try {
       await googleSignIn();
       redirect();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google sign-in error:", error);
-      setError("Failed to sign in with Google");
+      if (error.code === "auth/popup-closed-by-user") {
+        setError("Sign-in was cancelled");
+      } else if (error.code === "auth/popup-blocked") {
+        setError("Popup was blocked. Please allow popups and try again");
+      } else {
+        setError(error.message || "Failed to sign in with Google");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -154,9 +175,11 @@ const SignupPageContent: React.FC = () => {
         <div className="px-6 py-4">
           <button
             onClick={handleGoogleSignIn}
-            className="w-full py-2 bg-warning bg-tathir-gold text-tathir-maroon uppercase hover:scale-105 cursor-pointer transition-all ease-in-out duration-300 rounded-md hover:bg-tathir-beige/90 font-medium tracking-wide"
+            disabled={loading}
+            className="w-full py-2 bg-white text-gray-700 border border-gray-300 uppercase hover:scale-105 cursor-pointer transition-all ease-in-out duration-300 rounded-md hover:bg-gray-50 font-medium tracking-wide flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign up with Google
+            <FcGoogle className="h-5 w-5" />
+            {loading ? "Signing up..." : "Sign up with Google"}
           </button>
         </div>
 

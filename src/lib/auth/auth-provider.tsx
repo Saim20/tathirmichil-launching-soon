@@ -61,9 +61,15 @@ export default function AuthProvider({
 
   // Debug coin loading
 
-  const createUser = (email: string, password: string) => {
+  const createUser = async (email: string, password: string) => {
     setLoading(true);
-    return createUserWithEmailAndPassword(auth, email, password);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      return userCredential;
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
   
   const signInUser = async (email: string, password: string) => {
@@ -273,9 +279,15 @@ export default function AuthProvider({
     }
   };
 
-  const googleSignIn = () => {
+  const googleSignIn = async () => {
     setLoading(true);
-    return signInWithPopup(auth, provider);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      return result;
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
 
   const authinfo: AuthInfo = {

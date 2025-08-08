@@ -27,6 +27,8 @@ const ResetPasswordPageContent: React.FC = () => {
         setError("No account found with this email address");
       } else if (error.code === "auth/invalid-email") {
         setError("Please enter a valid email address");
+      } else if (error.code === "auth/too-many-requests") {
+        setError("Too many requests. Please try again later");
       } else {
         setError(error.message || "Failed to send password reset email");
       }

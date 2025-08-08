@@ -5,6 +5,7 @@ import { AuthContext } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import React, { useContext, useState, Suspense } from "react";
 import { FaRegEye, FaRegEyeSlash, FaSpinner } from "react-icons/fa6";
+import { FcGoogle } from "react-icons/fc";
 
 const LoginPageContent: React.FC = () => {
   const { signInUser, googleSignIn, user } = useContext(AuthContext)!;
@@ -49,12 +50,22 @@ const LoginPageContent: React.FC = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
     try {
       await googleSignIn();
       redirect();
     } catch (error: any) {
       console.error("Google sign-in error:", error);
-      setError("Failed to sign in with Google");
+      if (error.code === "auth/popup-closed-by-user") {
+        setError("Sign-in was cancelled");
+      } else if (error.code === "auth/popup-blocked") {
+        setError("Popup was blocked. Please allow popups and try again");
+      } else {
+        setError(error.message || "Failed to sign in with Google");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -150,9 +161,11 @@ const LoginPageContent: React.FC = () => {
     <div className="px-6 py-4">
       <button
         onClick={handleGoogleSignIn}
-        className="w-full py-2 bg-warning bg-tathir-gold text-tathir-maroon uppercase hover:scale-105 cursor-pointer transition-all ease-in-out duration-300 rounded-md hover:bg-tathir-beige/90 font-medium tracking-wide"
+        disabled={loading}
+        className="w-full py-2 bg-white text-gray-700 border border-gray-300 uppercase hover:scale-105 cursor-pointer transition-all ease-in-out duration-300 rounded-md hover:bg-gray-50 font-medium tracking-wide flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Sign in with Google
+        <FcGoogle className="h-5 w-5" />
+        {loading ? "Signing in..." : "Sign in with Google"}
       </button>
     </div>
 
