@@ -22,6 +22,7 @@ import {
   Home,
   HandCoins,
   Wallet,
+  Mail,
 } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebase";
@@ -315,7 +316,7 @@ export default function BookPage() {
                 >
                   <HandCoins className="w-5 h-5" />
                   <span className="relative z-10">
-                    Pre-order on Cash on delivery
+                    Order on Cash on delivery
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 </button>
@@ -432,7 +433,11 @@ export default function BookPage() {
                 </div>
                 <div className="flex items-center gap-3 text-tathir-brown jersey-10-regular">
                   <Clock className="w-5 h-5 text-tathir-maroon" />
-                  <span>Seamless delivery once the book is printed</span>
+                  <span>Seamless delivery within 2-3 days</span>
+                </div>
+                <div className="flex items-center gap-3 text-tathir-brown jersey-10-regular">
+                  <Mail className="w-5 h-5 text-tathir-maroon" />
+                  <span>You will get a confirmation e-mail</span>
                 </div>
               </div>
             </div>

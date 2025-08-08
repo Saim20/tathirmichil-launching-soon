@@ -162,7 +162,7 @@ const LoginPageContent: React.FC = () => {
       <button
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="w-full py-2 bg-white text-gray-700 border border-gray-300 uppercase hover:scale-105 cursor-pointer transition-all ease-in-out duration-300 rounded-md hover:bg-gray-50 font-medium tracking-wide flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2 bg-tathir-gold text-gray-700 border border-tathir-gold uppercase hover:scale-105 cursor-pointer transition-all ease-in-out duration-300 rounded-md hover:bg-gray-50 font-medium tracking-wide flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <FcGoogle className="h-5 w-5" />
         {loading ? "Signing in..." : "Sign in with Google"}

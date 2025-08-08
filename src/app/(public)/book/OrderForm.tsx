@@ -254,7 +254,7 @@ export default function OrderForm({ price, onClose }: OrderFormProps) {
   return (
     <div className="bg-tathir-beige rounded-lg border-2 border-tathir-brown/20 max-w-2xl mx-auto">
       <InfoCard
-        title="Preorder Your Book"
+        title="Order Your Book"
         icon={<Truck className="w-8 h-8 text-tathir-dark-green" />}
         variant="public"
         content={
