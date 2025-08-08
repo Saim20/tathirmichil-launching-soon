@@ -13,7 +13,7 @@ import {
 } from "@/components/form";
 
 export default function PersonalBatchFormPage() {
-  const { user } = useContext(AuthContext) || {};
+  const { userProfile } = useContext(AuthContext) || {};
   const formState = useFormState();
 
   // Destructure all needed state from the hook
@@ -51,8 +51,8 @@ export default function PersonalBatchFormPage() {
     return <LoadingView />;
   }
 
-  // Show success view when submitted and not editing
-  if (submitted && !isEditing) {
+  // Show success view when submitted and not editing and submission is actually complete
+  if ((submitted && !isEditing && submissionStatus.status === 'submitted') || userProfile?.approvalStatus === 'accepted' || userProfile?.approvalStatus === 'rejected') {
     return (
       <SuccessView
         existingFormData={existingFormData}

@@ -81,10 +81,9 @@ export default function ProgressIndicator({
       {/* Progress Bar */}
       <div className="w-full bg-white/20 rounded-full h-3 mb-4 overflow-hidden">
         <div 
-          className="bg-gradient-to-r from-tathir-light-green to-tathir-cream h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+          className="bg-tathir-light-green h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
           style={{ width: `${progressPercentage}%` }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
         </div>
       </div>
 

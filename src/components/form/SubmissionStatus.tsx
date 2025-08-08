@@ -57,10 +57,15 @@ export default function SubmissionStatus({
         };
       
       case 'modified':
+        // This status is used both for:
+        // 1. Forms that were submitted but are incomplete (lastSubmissionDate exists)
+        // 2. Forms that were complete but have been modified after submission
         return {
           icon: <FaEdit />,
-          text: 'Form modified after submission',
-          subtext: `Last submitted: ${lastSubmissionDate ? new Date(lastSubmissionDate).toLocaleString() : 'Unknown'}`,
+          text: lastSubmissionDate ? 'Incomplete submission found' : 'Form modified after submission',
+          subtext: lastSubmissionDate 
+            ? `Found submission from ${new Date(lastSubmissionDate).toLocaleString()} that needs completion`
+            : `Last submitted: ${lastSubmissionDate ? new Date(lastSubmissionDate).toLocaleString() : 'Unknown'}`,
           bgColor: 'tathir-glass-dark',
           borderColor: 'border-orange-500/30',
           textColor: 'text-orange-400',
@@ -99,29 +104,36 @@ export default function SubmissionStatus({
     switch (autoSaveStatus.status) {
       case 'saving':
         return (
-          <div className="flex items-center gap-2 text-blue-400 text-xs">
-            <FaSpinner className="animate-spin text-xs" />
-            <span>Auto-saving...</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400 text-xs">
+            <FaSpinner className="animate-spin text-xs flex-shrink-0" />
+            <span className="hidden sm:inline">Auto-saving...</span>
+            <span className="sm:hidden">Saving...</span>
           </div>
         );
       
       case 'saved':
         return (
-          <div className="flex items-center gap-2 text-green-400 text-xs">
-            <FaSave className="text-xs" />
-            <span>
-              Auto-saved {autoSaveStatus.lastSaved 
-                ? new Date(autoSaveStatus.lastSaved).toLocaleTimeString()
-                : 'just now'}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-green-400 text-xs">
+            <FaSave className="text-xs flex-shrink-0" />
+            <span className="truncate">
+              <span className="hidden sm:inline">Auto-saved </span>
+              <span className="sm:hidden">Saved </span>
+              {autoSaveStatus.lastSaved 
+                ? new Date(autoSaveStatus.lastSaved).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })
+                : 'now'}
             </span>
           </div>
         );
       
       case 'error':
         return (
-          <div className="flex items-center gap-2 text-red-400 text-xs">
-            <FaExclamationTriangle className="text-xs" />
-            <span>Auto-save failed</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-red-400 text-xs">
+            <FaExclamationTriangle className="text-xs flex-shrink-0" />
+            <span className="hidden sm:inline">Auto-save failed</span>
+            <span className="sm:hidden">Save failed</span>
           </div>
         );
       
@@ -131,21 +143,21 @@ export default function SubmissionStatus({
   };
 
   return (
-    <div className={`${config.bgColor} ${config.borderColor} border rounded-2xl p-6 shadow-xl ${className}`}>
-      <div className="flex items-start justify-between">
+    <div className={`${config.bgColor} ${config.borderColor} border rounded-2xl p-4 sm:p-6 shadow-xl ${className}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
         <div className="flex items-start gap-3 flex-1">
-          <div className={`${config.textColor} text-lg mt-0.5`}>
+          <div className={`${config.textColor} text-base sm:text-lg mt-0.5 flex-shrink-0`}>
             {config.icon}
           </div>
-          <div className="flex-1">
-            <h3 className={`${config.textColor} font-semibold ${bloxat.className}`}>
+          <div className="flex-1 min-w-0">
+            <h3 className={`${config.textColor} font-semibold ${bloxat.className} text-sm sm:text-base`}>
               {config.text}
             </h3>
-            <p className={`${config.subtextColor} text-sm mt-1`}>
+            <p className={`${config.subtextColor} text-xs sm:text-sm mt-1 break-words`}>
               {config.subtext}
             </p>
             {hasUnsavedChanges && status === 'submitted' && (
-              <p className="text-yellow-300 text-xs mt-2 font-medium">
+              <p className="text-yellow-300 text-xs mt-2 font-medium break-words">
                 ⚠️ You have unsaved changes that need to be resubmitted
               </p>
             )}
@@ -153,7 +165,7 @@ export default function SubmissionStatus({
         </div>
         
         {/* Auto-save indicator */}
-        <div className="ml-4">
+        <div className="sm:ml-4 flex-shrink-0">
           {getAutoSaveIndicator()}
         </div>
       </div>

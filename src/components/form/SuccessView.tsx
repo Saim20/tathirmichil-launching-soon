@@ -138,7 +138,7 @@ export default function SuccessView({
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          {userProfile?.approvalStatus === "accepted" ? (
+          {userProfile?.approvalStatus === "accepted" || userProfile?.approvalStatus === "rejected" ? (
             <></>
           ) : (
             <button

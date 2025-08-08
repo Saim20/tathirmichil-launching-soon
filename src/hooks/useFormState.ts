@@ -318,6 +318,74 @@ export const useFormState = (): UseFormStateReturn => {
         return { exists: false };
     };
 
+    // Validate if form data is complete for all required fields
+    const validateFormCompletion = (data: Partial<PersonalBatchFormData>, profilePictureUrl?: string): boolean => {
+        // Check all required fields across all steps
+        const requiredFields = [
+            // Step 1
+            data.fullName?.trim(),
+            data.emailAddress?.trim(),
+            data.phoneNumber?.trim(),
+            data.facebookProfile?.trim(),
+            data.location?.trim(),
+            profilePictureUrl?.trim() || data.profilePictureUrl?.trim(),
+            
+            // Step 2
+            data.school?.trim(),
+            data.college?.trim(),
+            data.group,
+            data.hscBatch,
+            data.academicDescription?.trim(),
+            
+            // Step 3
+            data.personalDescription?.trim(),
+            data.whyIBA?.trim(),
+            data.whyApplyingHere?.trim(),
+            data.ifNotIBA?.trim(),
+            
+            // Step 4
+            data.prepTimeline,
+            data.strugglingAreas && data.strugglingAreas.length > 0,
+            data.fiveYearsVision?.trim(),
+            data.otherPlatforms?.trim(),
+            data.admissionPlans?.trim(),
+            
+            // Step 5
+            data.stableInternet,
+            data.videoCameraOn,
+            data.attendClasses,
+            data.activeParticipation,
+            data.skipOtherCoachings,
+            data.stickTillExam,
+            
+            // Step 6
+            data.recentFailure?.trim(),
+            data.lastBookVideoArticle?.trim(),
+            
+            // Step 7
+            data.selectedBatch?.trim()
+        ];
+
+        // Check if all required fields are present and valid
+        const isComplete = requiredFields.every(field => {
+            if (typeof field === 'boolean') return field;
+            if (typeof field === 'string') return field && field.length > 0;
+            return !!field;
+        });
+
+        // Additional validation for email format
+        if (data.emailAddress?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.emailAddress.trim())) {
+            return false;
+        }
+
+        // Additional validation for phone number format
+        if (data.phoneNumber?.trim() && !/^(\+8801|01)[3-9]\d{8}$/.test(data.phoneNumber.trim().replace(/\s/g, ''))) {
+            return false;
+        }
+
+        return isComplete;
+    };
+
     // Set profile picture from user's auth profile if available
     useEffect(() => {
         console.log('Profile picture check:', { userProfile: userProfile?.profilePictureUrl, userPhotoURL: user?.photoURL, photoPreview, photoFile });
@@ -391,10 +459,49 @@ export const useFormState = (): UseFormStateReturn => {
                 }
                 hasLoadedData = true;
                 setHasUnsavedChanges(false); // Data loaded from localStorage is considered saved
+                
+                // Still check database for any submitted incomplete forms that should take precedence
+                const checkDatabaseForIncomplete = async () => {
+                    try {
+                        const result = await checkExistingFormSubmission(user.uid);
+                        if (result.success && result.data) {
+                            const existingData = result.data.formData!;
+                            const processedData = { ...existingData, submittedAt: existingData.submittedAt };
+                            
+                            // Check if database has incomplete submission
+                            const isDataComplete = validateFormCompletion(processedData, processedData.profilePictureUrl);
+                            if (!isDataComplete) {
+                                console.log('🔄 Found incomplete submission in database - overriding localStorage with database data');
+                                clearSavedData();
+                                setExistingFormData(processedData);
+                                setFormData(safelyMergeFormData(processedData));
+                                setSubmissionStatus({
+                                    status: 'modified',
+                                    lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : undefined,
+                                    hasUnsavedChanges: true
+                                });
+                                
+                                // Update photo if available from database
+                                if (processedData.profilePictureUrl?.trim()) {
+                                    setPhotoPreview(processedData.profilePictureUrl);
+                                    setCurrentPhotoUrl(processedData.profilePictureUrl);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error checking database for incomplete submissions:", error);
+                    } finally {
+                        // Enable auto-save after database check completes
+                        console.log('✅ Database check complete - enabling auto-save');
+                        setIsLoadingInitialData(false);
+                    }
+                };
+                
+                checkDatabaseForIncomplete();
             }
         }
 
-        // If no localStorage data, check database for existing submission
+                // If no localStorage data, check database for existing submission
         if (!hasLoadedData) {
             const checkSubmission = async () => {
                 setLoading(true);
@@ -411,13 +518,34 @@ export const useFormState = (): UseFormStateReturn => {
                         };
 
                         setExistingFormData(processedData);
-                        setSubmitted(true);
-
+                        
                         // Load existing data into form state only if no localStorage data
                         console.log('📥 Loading data from database (no localStorage found)');
-                        setFormData(safelyMergeFormData(processedData));
+                        const mergedData = safelyMergeFormData(processedData);
+                        setFormData(mergedData);
 
-                        // Set photo preview if available from existing form data
+                        // Validate if the loaded data is actually complete before marking as submitted
+                        const isDataComplete = validateFormCompletion(mergedData, processedData.profilePictureUrl || photoPreview);
+                        
+                        if (isDataComplete) {
+                            console.log('✅ Loaded data is complete - marking as submitted');
+                            setSubmitted(true);
+                            setSubmissionStatus({
+                                status: 'submitted',
+                                lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : new Date(),
+                                hasUnsavedChanges: false
+                            });
+                        } else {
+                            console.log('⚠️ Loaded data is incomplete - keeping as draft and clearing localStorage cache');
+                            // Clear localStorage when incomplete data is found in database to prevent conflicts
+                            clearSavedData();
+                            setSubmitted(false);
+                            setSubmissionStatus({
+                                status: 'modified',
+                                lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : undefined,
+                                hasUnsavedChanges: true
+                            });
+                        }                        // Set photo preview if available from existing form data
                         // Only set if it's different from user's profile picture to avoid conflicts
                         if (processedData.profilePictureUrl?.trim() &&
                             processedData.profilePictureUrl !== userProfile?.profilePictureUrl &&
@@ -441,9 +569,9 @@ export const useFormState = (): UseFormStateReturn => {
 
             checkSubmission();
         } else {
-            // Data was loaded from localStorage, no need to check database
-            console.log('✅ Initial data loading complete - enabling auto-save');
-            setIsLoadingInitialData(false);
+            // Data was loaded from localStorage, but we still need to wait for the database check
+            console.log('✅ Initial data loading complete - enabling auto-save after database check');
+            // The auto-save will be enabled after the database check completes
         }
     }, [user?.uid]); // Removed getSavedDataInfo and loadSavedData from dependencies
 
@@ -451,7 +579,8 @@ export const useFormState = (): UseFormStateReturn => {
     useEffect(() => {
         if (isEditing && existingFormData && !loading && !hasLoadedExistingData) {
             console.log('Switching to edit mode, loading existing data:', existingFormData);
-            setFormData(safelyMergeFormData(existingFormData));
+            const mergedData = safelyMergeFormData(existingFormData);
+            setFormData(mergedData);
 
             // Load existing profile picture if available
             if ((existingFormData as any).profilePictureUrl?.trim()) {
@@ -464,15 +593,15 @@ export const useFormState = (): UseFormStateReturn => {
                 console.log('No valid profile picture in existing data, clearing photoPreview');
             }
 
-            // Mark all steps as completed if we have existing form data
-            const allSteps = new Set<number>();
+            // Only mark steps as completed if they actually have valid data
+            const validSteps = new Set<number>();
             for (let i = 1; i <= totalSteps; i++) {
                 const stepErrors = getStepValidationErrors(i);
-                if (Object.keys(stepErrors).length === 0) {
-                    allSteps.add(i);
+                if (stepErrors.length === 0) {
+                    validSteps.add(i);
                 }
             }
-            setCompletedSteps(allSteps);
+            setCompletedSteps(validSteps);
 
             // Mark that we've loaded the data
             setHasLoadedExistingData(true);
