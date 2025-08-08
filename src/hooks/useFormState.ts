@@ -72,6 +72,7 @@ export interface UseFormStateReturn {
     clearSavedData: () => void;
     getSavedDataInfo: () => any;
     hasUnsavedChanges: boolean;
+    isLoadingInitialData: boolean;
 
     // Submission status
     submissionStatus: SubmissionStatus;
@@ -136,7 +137,7 @@ export const useFormState = (): UseFormStateReturn => {
     const [hasLoadedExistingData, setHasLoadedExistingData] = useState(false);
 
     // Track if we're currently loading initial data to prevent auto-save conflicts
-    const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
+    const [isLoadingInitialData, setIsLoadingInitialData] = useState(true); // Start as true to prevent premature status display
 
     // Track unsaved changes
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -429,9 +430,13 @@ export const useFormState = (): UseFormStateReturn => {
 
     // Load data on mount - localStorage first (latest edits), then database
     useEffect(() => {
-        if (!user?.uid) return;
+        if (!user?.uid) {
+            setIsLoadingInitialData(false); // No user, no loading needed
+            return;
+        }
 
         console.log('🔄 Starting initial data load for user:', user.uid);
+        setIsLoadingInitialData(true); // Ensure loading state is set
         let hasLoadedData = false;
 
         // First, try to load from localStorage (latest edits)
@@ -460,6 +465,12 @@ export const useFormState = (): UseFormStateReturn => {
                 hasLoadedData = true;
                 setHasUnsavedChanges(false); // Data loaded from localStorage is considered saved
                 
+                // Set initial submission status based on localStorage data (might be overridden by database check)
+                setSubmissionStatus({
+                    status: 'unsubmitted', // Default to unsubmitted until database check confirms
+                    hasUnsavedChanges: false
+                });
+                
                 // Still check database for any submitted incomplete forms that should take precedence
                 const checkDatabaseForIncomplete = async () => {
                     try {
@@ -468,9 +479,21 @@ export const useFormState = (): UseFormStateReturn => {
                             const existingData = result.data.formData!;
                             const processedData = { ...existingData, submittedAt: existingData.submittedAt };
                             
-                            // Check if database has incomplete submission
+                            // Check if database has any submission data
                             const isDataComplete = validateFormCompletion(processedData, processedData.profilePictureUrl);
-                            if (!isDataComplete) {
+                            
+                            if (isDataComplete) {
+                                // Database has complete submission - override localStorage status
+                                console.log('✅ Found complete submission in database - setting submitted status');
+                                setExistingFormData(processedData);
+                                setSubmitted(true);
+                                setSubmissionStatus({
+                                    status: 'submitted',
+                                    lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : new Date(),
+                                    hasUnsavedChanges: false
+                                });
+                            } else if (processedData.submittedAt) {
+                                // Database has incomplete submission - this takes precedence over localStorage
                                 console.log('🔄 Found incomplete submission in database - overriding localStorage with database data');
                                 clearSavedData();
                                 setExistingFormData(processedData);
@@ -487,11 +510,24 @@ export const useFormState = (): UseFormStateReturn => {
                                     setCurrentPhotoUrl(processedData.profilePictureUrl);
                                 }
                             }
+                            // If database has no submission data, keep localStorage data and unsubmitted status
+                        } else {
+                            // No database submission found - localStorage data is just draft
+                            setSubmissionStatus({
+                                status: 'unsubmitted',
+                                hasUnsavedChanges: true // Mark as having unsaved changes since it's just local draft
+                            });
                         }
                     } catch (error) {
-                        console.error("Error checking database for incomplete submissions:", error);
+                        console.error("Error checking database for submissions:", error);
+                        // On error, assume localStorage data is just draft
+                        setSubmissionStatus({
+                            status: 'unsubmitted',
+                            hasUnsavedChanges: true
+                        });
                     } finally {
-                        // Enable auto-save after database check completes
+                        // Enable auto-save and stop loading after database check completes
+                        setLoading(false);
                         console.log('✅ Database check complete - enabling auto-save');
                         setIsLoadingInitialData(false);
                     }
@@ -569,8 +605,9 @@ export const useFormState = (): UseFormStateReturn => {
 
             checkSubmission();
         } else {
-            // Data was loaded from localStorage, but we still need to wait for the database check
-            console.log('✅ Initial data loading complete - enabling auto-save after database check');
+            // Data was loaded from localStorage, but we still need to check database for completeness
+            setLoading(true); // Keep loading true until database check completes
+            console.log('✅ Initial data loading from localStorage complete - now checking database for conflicts');
             // The auto-save will be enabled after the database check completes
         }
     }, [user?.uid]); // Removed getSavedDataInfo and loadSavedData from dependencies
@@ -1157,6 +1194,7 @@ export const useFormState = (): UseFormStateReturn => {
         clearSavedData,
         getSavedDataInfo,
         hasUnsavedChanges,
+        isLoadingInitialData,
 
         // Submission status
         submissionStatus,

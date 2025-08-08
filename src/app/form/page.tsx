@@ -72,14 +72,26 @@ export default function PersonalBatchFormPage() {
           existingFormData={existingFormData}
         />
 
-        {/* Submission Status */}
-        <SubmissionStatus
-          status={submissionStatus.status}
-          lastSubmissionDate={submissionStatus.lastSubmissionDate}
-          hasUnsavedChanges={submissionStatus.hasUnsavedChanges}
-          autoSaveStatus={autoSaveStatus}
-          className="mb-6"
-        />
+        {/* Submission Status - only show when not loading initial data */}
+        {!formState.isLoadingInitialData && !loading && (
+          <SubmissionStatus
+            status={submissionStatus.status}
+            lastSubmissionDate={submissionStatus.lastSubmissionDate}
+            hasUnsavedChanges={submissionStatus.hasUnsavedChanges}
+            autoSaveStatus={autoSaveStatus}
+            className="mb-6"
+          />
+        )}
+
+        {/* Loading placeholder for submission status */}
+        {(formState.isLoadingInitialData || loading) && (
+          <div className="tathir-glass-dark border border-white/20 rounded-2xl p-4 sm:p-6 shadow-xl mb-6">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-tathir-cream"></div>
+              <div className="text-tathir-cream text-sm">Checking submission status...</div>
+            </div>
+          </div>
+        )}
 
         {/* Progress Indicator */}
         <ProgressIndicator
