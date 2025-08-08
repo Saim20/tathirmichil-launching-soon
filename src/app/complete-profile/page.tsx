@@ -128,9 +128,6 @@ function CompleteProfilePageContent() {
         {/* Logo/Icon */}
         <div className="mb-6 flex flex-col items-center">
           <FaUserCircle className="text-tathir-dark-green text-6xl mb-2 drop-shadow" />
-          <span className="text-lg font-semibold text-tathir-dark-green tracking-wide">
-            Tathir Michil
-          </span>
         </div>
         <div className="w-full max-w-md bg-white/90 p-8 rounded-2xl shadow-xl border border-tathir-dark-green/10">
           <h1 className="text-2xl font-bold mb-6 text-center text-tathir-dark-green">
