@@ -35,8 +35,8 @@ const LoginPageContent: React.FC = () => {
       console.error("Login error:", error);
       if (error.code === "auth/user-not-found") {
         setError("No account found with this email address");
-      } else if (error.code === "auth/wrong-password") {
-        setError("Incorrect password");
+      } else if (error.code === "auth/invalid-credential") {
+        setError("Incorrect email or password");
       } else if (error.code === "auth/invalid-email") {
         setError("Please enter a valid email address");
       } else if (error.code === "auth/user-disabled") {
