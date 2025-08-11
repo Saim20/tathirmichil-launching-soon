@@ -10,6 +10,7 @@ import {
 } from "@/lib/apis/forms";
 import { storage } from "@/lib/firebase/firebase";
 import { ref, deleteObject } from "firebase/storage";
+import { difference } from "next/dist/build/utils";
 
 export interface AutoSaveStatus {
     status: 'idle' | 'saving' | 'saved' | 'error';
@@ -31,9 +32,7 @@ export interface StepValidationError {
 export interface UseFormStateReturn {
     // Form data and state
     formData: Partial<PersonalBatchFormData>;
-    setFormData: React.Dispatch<React.SetStateAction<Partial<PersonalBatchFormData>>>;
     errors: FormValidationErrors;
-    setErrors: React.Dispatch<React.SetStateAction<FormValidationErrors>>;
 
     // Loading states
     loading: boolean;
@@ -46,16 +45,10 @@ export interface UseFormStateReturn {
     // Form submission states
     submitError: string;
     submitSuccess: string;
-    setSubmitError: React.Dispatch<React.SetStateAction<string>>;
-    setSubmitSuccess: React.Dispatch<React.SetStateAction<string>>;
 
     // Photo states
     photoFile: File | null;
     photoPreview: string;
-    setPhotoFile: React.Dispatch<React.SetStateAction<File | null>>;
-    setPhotoPreview: React.Dispatch<React.SetStateAction<string>>;
-    currentPhotoUrl: string;
-    isUploadingPhoto: boolean;
 
     // Step navigation
     currentStep: number;
@@ -64,24 +57,19 @@ export interface UseFormStateReturn {
 
     // Existing form data
     existingFormData: PersonalBatchFormData | null;
-    setExistingFormData: React.Dispatch<React.SetStateAction<PersonalBatchFormData | null>>;
 
-    // Auto-save
+    // Auto-save and status
     autoSaveStatus: AutoSaveStatus;
-    loadSavedData: () => any;
-    clearSavedData: () => void;
-    getSavedDataInfo: () => any;
     hasUnsavedChanges: boolean;
     isLoadingInitialData: boolean;
-
-    // Submission status
     submissionStatus: SubmissionStatus;
+
+    // Validation functions
     getAllValidationErrors: () => FormValidationErrors;
     getCurrentStepValidationErrors: () => StepValidationError[];
     getCompletedFieldsCount: () => number;
     getTotalFieldsCount: () => number;
-    getStepValidationErrors: (stepNumber: number) => StepValidationError[];
-    getStepFieldsCount: (stepNumber: number) => number;
+    getStepValidationErrors: (stepNumber: number, data?: Partial<PersonalBatchFormData>, profilePictureUrl?: string) => StepValidationError[];
     validateAndSetCurrentStepErrors: () => boolean;
 
     // Form handlers
@@ -99,7 +87,6 @@ export interface UseFormStateReturn {
     // Step completion tracking
     isStepCompleted: (step: number) => boolean;
     completedSteps: Set<number>;
-    setCompletedSteps: React.Dispatch<React.SetStateAction<Set<number>>>;
 
     // Utilities
     getStepTitle: (step: number) => string;
@@ -319,72 +306,192 @@ export const useFormState = (): UseFormStateReturn => {
         return { exists: false };
     };
 
-    // Validate if form data is complete for all required fields
-    const validateFormCompletion = (data: Partial<PersonalBatchFormData>, profilePictureUrl?: string): boolean => {
-        // Check all required fields across all steps
-        const requiredFields = [
-            // Step 1
-            data.fullName?.trim(),
-            data.emailAddress?.trim(),
-            data.phoneNumber?.trim(),
-            data.facebookProfile?.trim(),
-            data.location?.trim(),
-            profilePictureUrl?.trim() || data.profilePictureUrl?.trim(),
-            
-            // Step 2
-            data.school?.trim(),
-            data.college?.trim(),
-            data.group,
-            data.hscBatch,
-            data.academicDescription?.trim(),
-            
-            // Step 3
-            data.personalDescription?.trim(),
-            data.whyIBA?.trim(),
-            data.whyApplyingHere?.trim(),
-            data.ifNotIBA?.trim(),
-            
-            // Step 4
-            data.prepTimeline,
-            data.strugglingAreas && data.strugglingAreas.length > 0,
-            data.fiveYearsVision?.trim(),
-            data.otherPlatforms?.trim(),
-            data.admissionPlans?.trim(),
-            
-            // Step 5
-            data.stableInternet,
-            data.videoCameraOn,
-            data.attendClasses,
-            data.activeParticipation,
-            data.skipOtherCoachings,
-            data.stickTillExam,
-            
-            // Step 6
-            data.recentFailure?.trim(),
-            data.lastBookVideoArticle?.trim(),
-            
-            // Step 7
-            data.selectedBatch?.trim()
-        ];
+    // Centralized validation function - handles both current form state and arbitrary data
+    const getStepValidationErrors = (stepNumber: number, data?: Partial<PersonalBatchFormData>, profilePictureUrl?: string): StepValidationError[] => {
+        // Use provided data or fall back to current form state
+        const validationData = data || formData;
+        const photoUrl = profilePictureUrl || photoPreview || "";
+        const hasPhotoFile = !data && photoFile; // Only consider photoFile when validating current state
 
-        // Check if all required fields are present and valid
-        const isComplete = requiredFields.every(field => {
-            if (typeof field === 'boolean') return field;
-            if (typeof field === 'string') return field && field.length > 0;
-            return !!field;
-        });
+        const stepErrors: StepValidationError[] = [];
 
-        // Additional validation for email format
-        if (data.emailAddress?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.emailAddress.trim())) {
-            return false;
+        switch (stepNumber) {
+            case 1:
+                if (!validationData.fullName?.trim()) {
+                    stepErrors.push({ field: 'fullName', message: 'Full Name is required' });
+                }
+                if (!validationData.emailAddress?.trim()) {
+                    stepErrors.push({ field: 'emailAddress', message: 'Email Address is required' });
+                }
+                else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(validationData.emailAddress.trim())) {
+                    stepErrors.push({ field: 'emailAddress', message: 'Please enter a valid email address' });
+                }
+                if (!validationData.phoneNumber?.trim()) {
+                    stepErrors.push({ field: 'phoneNumber', message: 'Phone Number is required' });
+                }
+                else if (!/^(\+8801|01)[3-9]\d{8}$/.test(validationData.phoneNumber.trim().replace(/\s/g, ''))) {
+                    stepErrors.push({ field: 'phoneNumber', message: 'Please enter a valid Bangladeshi phone number' });
+                }
+                if (!validationData.facebookProfile?.trim()) {
+                    stepErrors.push({ field: 'facebookProfile', message: 'Facebook Profile is required' });
+                }
+                if (!validationData.location?.trim()) {
+                    stepErrors.push({ field: 'location', message: 'Current Location is required' });
+                }
+                if (!photoUrl?.trim() && !hasPhotoFile) {
+                    stepErrors.push({ field: 'profilePicture', message: 'Profile Picture is required' });
+                }
+                break;
+            case 2:
+                if (!validationData.school?.trim()) {
+                    stepErrors.push({ field: 'school', message: 'School is required' });
+                }
+                if (!validationData.college?.trim()) {
+                    stepErrors.push({ field: 'college', message: 'College is required' });
+                }
+                if (!validationData.group) {
+                    stepErrors.push({ field: 'group', message: 'Group is required' });
+                }
+                if (!validationData.hscBatch) {
+                    stepErrors.push({ field: 'hscBatch', message: 'HSC Batch is required' });
+                }
+                if (!validationData.academicDescription?.trim()) {
+                    stepErrors.push({ field: 'academicDescription', message: 'Academic Description is required' });
+                }
+                break;
+            case 3:
+                if (!validationData.personalDescription?.trim()) {
+                    stepErrors.push({ field: 'personalDescription', message: 'Personal Description is required' });
+                }
+                if (!validationData.whyIBA?.trim()) {
+                    stepErrors.push({ field: 'whyIBA', message: 'Why IBA is required' });
+                }
+                if (!validationData.whyApplyingHere?.trim()) {
+                    stepErrors.push({ field: 'whyApplyingHere', message: 'Why applying here is required' });
+                }
+                if (!validationData.ifNotIBA?.trim()) {
+                    stepErrors.push({ field: 'ifNotIBA', message: 'If not IBA response is required' });
+                }
+                break;
+            case 4:
+                if (!validationData.prepTimeline) {
+                    stepErrors.push({ field: 'prepTimeline', message: 'Preparation Timeline is required' });
+                }
+                if (!validationData.strugglingAreas || validationData.strugglingAreas.length === 0) {
+                    stepErrors.push({ field: 'strugglingAreas', message: 'Struggling Areas selection is required' });
+                }
+                if (!validationData.fiveYearsVision?.trim()) {
+                    stepErrors.push({ field: 'fiveYearsVision', message: 'Five Years Vision is required' });
+                }
+                if (!validationData.otherPlatforms?.trim()) {
+                    stepErrors.push({ field: 'otherPlatforms', message: 'Other Platforms response is required' });
+                }
+                if (!validationData.admissionPlans?.trim()) {
+                    stepErrors.push({ field: 'admissionPlans', message: 'Admission Plans are required' });
+                }
+                break;
+            case 5:
+                if (!validationData.stableInternet) {
+                    stepErrors.push({ field: 'stableInternet', message: 'Stable Internet confirmation is required' });
+                }
+                if (!validationData.videoCameraOn) {
+                    stepErrors.push({ field: 'videoCameraOn', message: 'Video Camera confirmation is required' });
+                }
+                if (!validationData.attendClasses) {
+                    stepErrors.push({ field: 'attendClasses', message: 'Attend Classes confirmation is required' });
+                }
+                if (!validationData.activeParticipation) {
+                    stepErrors.push({ field: 'activeParticipation', message: 'Active Participation confirmation is required' });
+                }
+                if (!validationData.skipOtherCoachings) {
+                    stepErrors.push({ field: 'skipOtherCoachings', message: 'Skip Other Coachings confirmation is required' });
+                }
+                if (!validationData.stickTillExam) {
+                    stepErrors.push({ field: 'stickTillExam', message: 'Stick Till Exam confirmation is required' });
+                }
+                break;
+            case 6:
+                if (!validationData.recentFailure?.trim()) {
+                    stepErrors.push({ field: 'recentFailure', message: 'Recent Failure response is required' });
+                }
+                if (!validationData.lastBookVideoArticle?.trim()) {
+                    stepErrors.push({ field: 'lastBookVideoArticle', message: 'Last Book/Video/Article response is required' });
+                }
+                break;
+            case 7:
+                if (!validationData.selectedBatch?.trim()) {
+                    stepErrors.push({ field: 'selectedBatch', message: 'Batch selection is required' });
+                }
+                break;
         }
 
-        // Additional validation for phone number format
-        if (data.phoneNumber?.trim() && !/^(\+8801|01)[3-9]\d{8}$/.test(data.phoneNumber.trim().replace(/\s/g, ''))) {
-            return false;
-        }
+        return stepErrors;
+    };
 
-        return isComplete;
+    // Modular data loading functions
+    const loadFromLocalStorage = (): { success: boolean; data?: any; hasData: boolean } => {
+        const savedDataInfo = getSavedDataInfo();
+        if (savedDataInfo.exists && !savedDataInfo.isExpired) {
+            const savedData = loadSavedData();
+            if (savedData?.formData) {
+                console.log('📥 Loading latest edits from localStorage');
+                return { success: true, data: savedData, hasData: true };
+            }
+        }
+        return { success: true, data: null, hasData: false };
+    };
+
+    const loadFromDatabase = async (): Promise<{ success: boolean; data?: any; hasData: boolean; error?: string }> => {
+        try {
+            const result = await checkExistingFormSubmission(user!.uid);
+            if (result.success && result.data) {
+                const existingData = result.data.formData!;
+                const processedData = { ...existingData, submittedAt: existingData.submittedAt };
+                console.log('📥 Loading data from database');
+                return { success: true, data: processedData, hasData: true };
+            }
+            return { success: true, data: null, hasData: false };
+        } catch (error) {
+            console.error("Error loading from database:", error);
+            return { success: false, data: null, hasData: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+    };
+
+    const applyLocalStorageData = (savedData: any) => {
+        setFormData(safelyMergeFormData(savedData.formData));
+        if (savedData.currentStep) {
+            setCurrentStep(savedData.currentStep);
+        }
+        if (savedData.completedSteps) {
+            setCompletedSteps(new Set(savedData.completedSteps));
+        }
+        // Only restore saved photo if it exists and is different from user's profile picture
+        if (savedData.photoPreview &&
+            savedData.photoPreview !== userProfile?.profilePictureUrl &&
+            savedData.photoPreview !== user?.photoURL) {
+            setPhotoPreview(savedData.photoPreview);
+        }
+        if (savedData.currentPhotoUrl) {
+            setCurrentPhotoUrl(savedData.currentPhotoUrl);
+        }
+        setHasUnsavedChanges(false);
+    };
+
+    const applyDatabaseData = (processedData: any) => {
+        setExistingFormData(processedData);
+        const mergedData = safelyMergeFormData(processedData);
+        setFormData(mergedData);
+
+        // Set photo preview if available from existing form data
+        if (processedData.profilePictureUrl?.trim() &&
+            processedData.profilePictureUrl !== userProfile?.profilePictureUrl &&
+            processedData.profilePictureUrl !== user?.photoURL) {
+            setPhotoPreview(processedData.profilePictureUrl);
+            setCurrentPhotoUrl(processedData.profilePictureUrl);
+        } else if (!processedData.profilePictureUrl?.trim()) {
+            setPhotoPreview("");
+        }
+        setHasUnsavedChanges(false);
     };
 
     // Set profile picture from user's auth profile if available
@@ -426,9 +533,9 @@ export const useFormState = (): UseFormStateReturn => {
                 clearTimeout(autoSaveTimeoutRef.current);
             }
         };
-    }, [formData, currentStep, photoPreview, completedSteps, user?.uid, isLoadingInitialData]);
+    }, [formData, user?.uid, isLoadingInitialData]);
 
-    // Load data on mount - localStorage first (latest edits), then database
+    // Load data on mount - prioritize localStorage (latest edits), then database for reference
     useEffect(() => {
         if (!user?.uid) {
             setIsLoadingInitialData(false); // No user, no loading needed
@@ -436,181 +543,116 @@ export const useFormState = (): UseFormStateReturn => {
         }
 
         console.log('🔄 Starting initial data load for user:', user.uid);
-        setIsLoadingInitialData(true); // Ensure loading state is set
-        let hasLoadedData = false;
+        setIsLoadingInitialData(true);
+        setLoading(true);
 
-        // First, try to load from localStorage (latest edits)
-        const savedDataInfo = getSavedDataInfo();
-        if (savedDataInfo.exists && !savedDataInfo.isExpired) {
-            const savedData = loadSavedData();
-            if (savedData?.formData) {
-                console.log('📥 Loading latest edits from localStorage');
-                setFormData(safelyMergeFormData(savedData.formData));
-                if (savedData.currentStep) {
-                    setCurrentStep(savedData.currentStep);
-                }
-                if (savedData.completedSteps) {
-                    setCompletedSteps(new Set(savedData.completedSteps));
-                }
-                // Only restore saved photo if it exists and is different from user's profile picture
-                // This prevents overriding the user's profile picture with empty/placeholder values
-                if (savedData.photoPreview &&
-                    savedData.photoPreview !== userProfile?.profilePictureUrl &&
-                    savedData.photoPreview !== user?.photoURL) {
-                    setPhotoPreview(savedData.photoPreview);
-                }
-                if (savedData.currentPhotoUrl) {
-                    setCurrentPhotoUrl(savedData.currentPhotoUrl); // Restore uploaded photo URL
-                }
-                hasLoadedData = true;
-                setHasUnsavedChanges(false); // Data loaded from localStorage is considered saved
-                
-                // Set initial submission status based on localStorage data (might be overridden by database check)
-                setSubmissionStatus({
-                    status: 'unsubmitted', // Default to unsubmitted until database check confirms
-                    hasUnsavedChanges: false
-                });
-                
-                // Still check database for any submitted incomplete forms that should take precedence
-                const checkDatabaseForIncomplete = async () => {
-                    try {
-                        const result = await checkExistingFormSubmission(user.uid);
-                        if (result.success && result.data) {
-                            const existingData = result.data.formData!;
-                            const processedData = { ...existingData, submittedAt: existingData.submittedAt };
-                            
-                            // Check if database has any submission data
-                            const isDataComplete = validateFormCompletion(processedData, processedData.profilePictureUrl);
-                            
-                            if (isDataComplete) {
-                                // Database has complete submission - override localStorage status
-                                console.log('✅ Found complete submission in database - setting submitted status');
-                                setExistingFormData(processedData);
-                                setSubmitted(true);
-                                setSubmissionStatus({
-                                    status: 'submitted',
-                                    lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : new Date(),
-                                    hasUnsavedChanges: false
-                                });
-                            } else if (processedData.submittedAt) {
-                                // Database has incomplete submission - this takes precedence over localStorage
-                                console.log('🔄 Found incomplete submission in database - overriding localStorage with database data');
-                                clearSavedData();
-                                setExistingFormData(processedData);
-                                setFormData(safelyMergeFormData(processedData));
-                                setSubmissionStatus({
-                                    status: 'modified',
-                                    lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : undefined,
-                                    hasUnsavedChanges: true
-                                });
-                                
-                                // Update photo if available from database
-                                if (processedData.profilePictureUrl?.trim()) {
-                                    setPhotoPreview(processedData.profilePictureUrl);
-                                    setCurrentPhotoUrl(processedData.profilePictureUrl);
-                                }
-                            }
-                            // If database has no submission data, keep localStorage data and unsubmitted status
+        const initializeFormData = async () => {
+            try {
+                // Step 1: Always try localStorage first (preserves latest edits)
+                const localStorageResult = loadFromLocalStorage();
+
+                // Step 2: Get database data for submission status reference
+                const databaseResult = await loadFromDatabase();
+
+                if (localStorageResult.hasData) {
+                    // Apply localStorage data (user's latest edits)
+                    console.log('📥 Applying localStorage data (latest edits)');
+                    applyLocalStorageData(localStorageResult.data);
+
+                    // Set initial submission status based on database state
+                    if (databaseResult.success && databaseResult.hasData) {
+                        // Database has submission - check if it's complete
+                        const allErrors: StepValidationError[] = [];
+                        for (let step = 1; step <= totalSteps; step++) {
+                            const stepErrors = getStepValidationErrors(step, databaseResult.data, databaseResult.data.profilePictureUrl);
+                            allErrors.push(...stepErrors);
+                        }
+                        const isDatabaseComplete = allErrors.length === 0;
+
+                        if (isDatabaseComplete) {
+                            console.log('✅ Database has complete submission - localStorage contains edits to submitted form');
+                            setExistingFormData(databaseResult.data);
+                            setSubmitted(true);
+                            setSubmissionStatus({
+                                status: 'submitted', // Modified because localStorage has different data
+                                lastSubmissionDate: databaseResult.data.submittedAt ? new Date(databaseResult.data.submittedAt) : new Date(),
+                                hasUnsavedChanges: false
+                            });
+                        } else if (databaseResult.data.submittedAt) {
+                            console.log('🔄 Database has incomplete submission - localStorage contains latest edits');
+                            setExistingFormData(databaseResult.data);
+                            setSubmissionStatus({
+                                status: 'modified',
+                                lastSubmissionDate: databaseResult.data.submittedAt ? new Date(databaseResult.data.submittedAt) : undefined,
+                                hasUnsavedChanges: true
+                            });
                         } else {
-                            // No database submission found - localStorage data is just draft
+                            // Database has no submission - localStorage is draft
                             setSubmissionStatus({
                                 status: 'unsubmitted',
-                                hasUnsavedChanges: true // Mark as having unsaved changes since it's just local draft
+                                hasUnsavedChanges: true
                             });
                         }
-                    } catch (error) {
-                        console.error("Error checking database for submissions:", error);
-                        // On error, assume localStorage data is just draft
+                    } else {
+                        // No database submission - localStorage is draft
                         setSubmissionStatus({
                             status: 'unsubmitted',
                             hasUnsavedChanges: true
                         });
-                    } finally {
-                        // Enable auto-save and stop loading after database check completes
-                        setLoading(false);
-                        console.log('✅ Database check complete - enabling auto-save');
-                        setIsLoadingInitialData(false);
                     }
-                };
-                
-                checkDatabaseForIncomplete();
-            }
-        }
+                } else if (databaseResult.success && databaseResult.hasData) {
+                    // No localStorage data - use database data
+                    console.log('📥 No localStorage found - applying database data');
+                    applyDatabaseData(databaseResult.data);
 
-                // If no localStorage data, check database for existing submission
-        if (!hasLoadedData) {
-            const checkSubmission = async () => {
-                setLoading(true);
-                try {
-                    const result = await checkExistingFormSubmission(user.uid);
-
-                    if (result.success && result.data) {
-                        const existingData = result.data.formData!;
-
-                        // Process the existingData to handle Firestore timestamp conversion
-                        const processedData = {
-                            ...existingData,
-                            submittedAt: existingData.submittedAt
-                        };
-
-                        setExistingFormData(processedData);
-                        
-                        // Load existing data into form state only if no localStorage data
-                        console.log('📥 Loading data from database (no localStorage found)');
-                        const mergedData = safelyMergeFormData(processedData);
-                        setFormData(mergedData);
-
-                        // Validate if the loaded data is actually complete before marking as submitted
-                        const isDataComplete = validateFormCompletion(mergedData, processedData.profilePictureUrl || photoPreview);
-                        
-                        if (isDataComplete) {
-                            console.log('✅ Loaded data is complete - marking as submitted');
-                            setSubmitted(true);
-                            setSubmissionStatus({
-                                status: 'submitted',
-                                lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : new Date(),
-                                hasUnsavedChanges: false
-                            });
-                        } else {
-                            console.log('⚠️ Loaded data is incomplete - keeping as draft and clearing localStorage cache');
-                            // Clear localStorage when incomplete data is found in database to prevent conflicts
-                            clearSavedData();
-                            setSubmitted(false);
-                            setSubmissionStatus({
-                                status: 'modified',
-                                lastSubmissionDate: processedData.submittedAt ? new Date(processedData.submittedAt) : undefined,
-                                hasUnsavedChanges: true
-                            });
-                        }                        // Set photo preview if available from existing form data
-                        // Only set if it's different from user's profile picture to avoid conflicts
-                        if (processedData.profilePictureUrl?.trim() &&
-                            processedData.profilePictureUrl !== userProfile?.profilePictureUrl &&
-                            processedData.profilePictureUrl !== user?.photoURL) {
-                            setPhotoPreview(processedData.profilePictureUrl);
-                            setCurrentPhotoUrl(processedData.profilePictureUrl); // Track current uploaded URL
-                        } else if (!processedData.profilePictureUrl?.trim()) {
-                            // If no profile picture in database, let the profile picture useEffect handle it
-                            setPhotoPreview("");
-                        }
-                        setHasUnsavedChanges(false); // Data loaded from database is considered saved
+                    // Validate database data completeness
+                    const allErrors: StepValidationError[] = [];
+                    for (let step = 1; step <= totalSteps; step++) {
+                        const stepErrors = getStepValidationErrors(step, databaseResult.data, databaseResult.data.profilePictureUrl);
+                        allErrors.push(...stepErrors);
                     }
-                } catch (error) {
-                    console.error("Error checking existing submission:", error);
-                } finally {
-                    setLoading(false);
-                    console.log('✅ Database check complete - enabling auto-save');
-                    setIsLoadingInitialData(false); // Enable auto-save after initial loading
+                    const isDataComplete = allErrors.length === 0;
+
+                    if (isDataComplete) {
+                        console.log('✅ Database data is complete - marking as submitted');
+                        setSubmitted(true);
+                        setSubmissionStatus({
+                            status: 'submitted',
+                            lastSubmissionDate: databaseResult.data.submittedAt ? new Date(databaseResult.data.submittedAt) : new Date(),
+                            hasUnsavedChanges: false
+                        });
+                    } else {
+                        console.log('⚠️ Database data is incomplete - keeping as draft');
+                        setSubmitted(false);
+                        setSubmissionStatus({
+                            status: 'modified',
+                            lastSubmissionDate: databaseResult.data.submittedAt ? new Date(databaseResult.data.submittedAt) : undefined,
+                            hasUnsavedChanges: true
+                        });
+                    }
+                } else {
+                    // No data found anywhere - start fresh
+                    console.log('🆕 No existing data found - starting fresh');
+                    setSubmissionStatus({
+                        status: 'unsubmitted',
+                        hasUnsavedChanges: false
+                    });
                 }
-            };
+            } catch (error) {
+                console.error("Error during initial data load:", error);
+                setSubmissionStatus({
+                    status: 'unsubmitted',
+                    hasUnsavedChanges: false
+                });
+            } finally {
+                setLoading(false);
+                setIsLoadingInitialData(false);
+                console.log('✅ Initial data loading complete - enabling auto-save');
+            }
+        };
 
-            checkSubmission();
-        } else {
-            // Data was loaded from localStorage, but we still need to check database for completeness
-            setLoading(true); // Keep loading true until database check completes
-            console.log('✅ Initial data loading from localStorage complete - now checking database for conflicts');
-            // The auto-save will be enabled after the database check completes
-        }
-    }, [user?.uid]); // Removed getSavedDataInfo and loadSavedData from dependencies
+        initializeFormData();
+    }, [user?.uid]);
 
     // When user switches to editing mode, ensure existing form data and profile picture are loaded (only once)
     useEffect(() => {
@@ -654,53 +696,11 @@ export const useFormState = (): UseFormStateReturn => {
     useEffect(() => {
         if (!user?.uid || submitted || loading) return;
 
-        // Create a function to validate each step
-        const validateStep = (step: number): boolean => {
-            switch (step) {
-                case 1:
-                    return !!(formData.fullName?.trim() &&
-                        formData.emailAddress?.trim() &&
-                        formData.phoneNumber?.trim() &&
-                        formData.facebookProfile?.trim() &&
-                        (photoPreview?.trim() || photoFile)); // Include photo validation with proper empty string check
-                case 2:
-                    return !!(formData.school?.trim() &&
-                        formData.college?.trim() &&
-                        formData.group &&
-                        formData.hscBatch &&
-                        formData.academicDescription?.trim());
-                case 3:
-                    return !!(formData.personalDescription?.trim() &&
-                        formData.whyIBA?.trim() &&
-                        formData.whyApplyingHere?.trim() &&
-                        formData.ifNotIBA?.trim());
-                case 4:
-                    return !!(formData.prepTimeline &&
-                        formData.strugglingAreas && formData.strugglingAreas.length > 0 &&
-                        formData.fiveYearsVision?.trim() &&
-                        formData.otherPlatforms?.trim() &&
-                        formData.admissionPlans?.trim());
-                case 5:
-                    return !!(formData.stableInternet &&
-                        formData.videoCameraOn &&
-                        formData.attendClasses &&
-                        formData.activeParticipation &&
-                        formData.skipOtherCoachings &&
-                        formData.stickTillExam);
-                case 6:
-                    return !!(formData.recentFailure?.trim() &&
-                        formData.lastBookVideoArticle?.trim());
-                case 7:
-                    return !!(formData.selectedBatch?.trim());
-                default:
-                    return false;
-            }
-        };
-
-        // Revalidate all completed steps
+        // Use centralized validation system to check step completion
         const validSteps = new Set<number>();
         for (let step = 1; step <= totalSteps; step++) {
-            if (validateStep(step)) {
+            const stepErrors = getStepValidationErrors(step);
+            if (stepErrors.length === 0) {
                 validSteps.add(step);
             }
         }
@@ -879,123 +879,6 @@ export const useFormState = (): UseFormStateReturn => {
         return titles[step as keyof typeof titles] || "";
     };
 
-    // Consolidated validation logic for any step
-    const getStepValidationErrors = (stepNumber: number): StepValidationError[] => {
-        const stepErrors: StepValidationError[] = [];
-
-        switch (stepNumber) {
-            case 1:
-                if (!formData.fullName?.trim()) {
-                    stepErrors.push({ field: 'fullName', message: 'Full Name is required' });
-                }
-                if (!formData.emailAddress?.trim()) {
-                    stepErrors.push({ field: 'emailAddress', message: 'Email Address is required' });
-                }
-                else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress.trim())) {
-                    stepErrors.push({ field: 'emailAddress', message: 'Please enter a valid email address' });
-                }
-                if (!formData.phoneNumber?.trim()) {
-                    stepErrors.push({ field: 'phoneNumber', message: 'Phone Number is required' });
-                }
-                else if (!/^(\+8801|01)[3-9]\d{8}$/.test(formData.phoneNumber.trim().replace(/\s/g, ''))) {
-                    stepErrors.push({ field: 'phoneNumber', message: 'Please enter a valid Bangladeshi phone number' });
-                }
-                if (!formData.facebookProfile?.trim()) {
-                    stepErrors.push({ field: 'facebookProfile', message: 'Facebook Profile is required' });
-                }
-                if (!formData.location?.trim()) {
-                    stepErrors.push({ field: 'location', message: 'Current Location is required' });
-                }
-                if (!photoPreview?.trim() && !photoFile) {
-                    stepErrors.push({ field: 'profilePicture', message: 'Profile Picture is required' });
-                }
-                break;
-            case 2:
-                if (!formData.school?.trim()) {
-                    stepErrors.push({ field: 'school', message: 'School is required' });
-                }
-                if (!formData.college?.trim()) {
-                    stepErrors.push({ field: 'college', message: 'College is required' });
-                }
-                if (!formData.group) {
-                    stepErrors.push({ field: 'group', message: 'Group is required' });
-                }
-                if (!formData.hscBatch) {
-                    stepErrors.push({ field: 'hscBatch', message: 'HSC Batch is required' });
-                }
-                if (!formData.academicDescription?.trim()) {
-                    stepErrors.push({ field: 'academicDescription', message: 'Academic Description is required' });
-                }
-                break;
-            case 3:
-                if (!formData.personalDescription?.trim()) {
-                    stepErrors.push({ field: 'personalDescription', message: 'Personal Description is required' });
-                }
-                if (!formData.whyIBA?.trim()) {
-                    stepErrors.push({ field: 'whyIBA', message: 'Why IBA is required' });
-                }
-                if (!formData.whyApplyingHere?.trim()) {
-                    stepErrors.push({ field: 'whyApplyingHere', message: 'Why applying here is required' });
-                }
-                if (!formData.ifNotIBA?.trim()) {
-                    stepErrors.push({ field: 'ifNotIBA', message: 'If not IBA response is required' });
-                }
-                break;
-            case 4:
-                if (!formData.prepTimeline) {
-                    stepErrors.push({ field: 'prepTimeline', message: 'Preparation Timeline is required' });
-                }
-                if (!formData.strugglingAreas || formData.strugglingAreas.length === 0) {
-                    stepErrors.push({ field: 'strugglingAreas', message: 'Struggling Areas selection is required' });
-                }
-                if (!formData.fiveYearsVision?.trim()) {
-                    stepErrors.push({ field: 'fiveYearsVision', message: 'Five Years Vision is required' });
-                }
-                if (!formData.otherPlatforms?.trim()) {
-                    stepErrors.push({ field: 'otherPlatforms', message: 'Other Platforms response is required' });
-                }
-                if (!formData.admissionPlans?.trim()) {
-                    stepErrors.push({ field: 'admissionPlans', message: 'Admission Plans are required' });
-                }
-                break;
-            case 5:
-                if (!formData.stableInternet) {
-                    stepErrors.push({ field: 'stableInternet', message: 'Stable Internet confirmation is required' });
-                }
-                if (!formData.videoCameraOn) {
-                    stepErrors.push({ field: 'videoCameraOn', message: 'Video Camera confirmation is required' });
-                }
-                if (!formData.attendClasses) {
-                    stepErrors.push({ field: 'attendClasses', message: 'Attend Classes confirmation is required' });
-                }
-                if (!formData.activeParticipation) {
-                    stepErrors.push({ field: 'activeParticipation', message: 'Active Participation confirmation is required' });
-                }
-                if (!formData.skipOtherCoachings) {
-                    stepErrors.push({ field: 'skipOtherCoachings', message: 'Skip Other Coachings confirmation is required' });
-                }
-                if (!formData.stickTillExam) {
-                    stepErrors.push({ field: 'stickTillExam', message: 'Stick Till Exam confirmation is required' });
-                }
-                break;
-            case 6:
-                if (!formData.recentFailure?.trim()) {
-                    stepErrors.push({ field: 'recentFailure', message: 'Recent Failure response is required' });
-                }
-                if (!formData.lastBookVideoArticle?.trim()) {
-                    stepErrors.push({ field: 'lastBookVideoArticle', message: 'Last Book/Video/Article response is required' });
-                }
-                break;
-            case 7:
-                if (!formData.selectedBatch?.trim()) {
-                    stepErrors.push({ field: 'selectedBatch', message: 'Batch selection is required' });
-                }
-                break;
-        }
-
-        return stepErrors;
-    };
-
     // Validate and set field errors for current step
     const validateAndSetCurrentStepErrors = () => {
         const stepErrors = getStepValidationErrors(currentStep);
@@ -1153,9 +1036,7 @@ export const useFormState = (): UseFormStateReturn => {
     return {
         // Form data and state
         formData,
-        setFormData,
         errors,
-        setErrors,
 
         // Loading states
         loading,
@@ -1168,16 +1049,10 @@ export const useFormState = (): UseFormStateReturn => {
         // Form submission states
         submitError,
         submitSuccess,
-        setSubmitError,
-        setSubmitSuccess,
 
         // Photo states
         photoFile,
         photoPreview,
-        setPhotoFile,
-        setPhotoPreview,
-        currentPhotoUrl,
-        isUploadingPhoto,
 
         // Step navigation
         currentStep,
@@ -1186,24 +1061,19 @@ export const useFormState = (): UseFormStateReturn => {
 
         // Existing form data
         existingFormData,
-        setExistingFormData,
 
-        // Auto-save
+        // Auto-save and status
         autoSaveStatus,
-        loadSavedData,
-        clearSavedData,
-        getSavedDataInfo,
         hasUnsavedChanges,
         isLoadingInitialData,
-
-        // Submission status
         submissionStatus,
+
+        // Validation functions
         getAllValidationErrors,
         getCurrentStepValidationErrors,
         getCompletedFieldsCount,
         getTotalFieldsCount,
         getStepValidationErrors,
-        getStepFieldsCount,
         validateAndSetCurrentStepErrors,
 
         // Form handlers
@@ -1221,7 +1091,6 @@ export const useFormState = (): UseFormStateReturn => {
         // Step completion tracking
         isStepCompleted,
         completedSteps,
-        setCompletedSteps,
 
         // Utilities
         getStepTitle,

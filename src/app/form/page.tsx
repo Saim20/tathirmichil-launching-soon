@@ -9,7 +9,6 @@ import {
   LoadingView,
   FormRenderer,
   SubmissionStatus,
-  ValidationSummary
 } from "@/components/form";
 
 export default function PersonalBatchFormPage() {
@@ -27,8 +26,6 @@ export default function PersonalBatchFormPage() {
     currentStep,
     totalSteps,
     autoSaveStatus,
-    loadSavedData,
-    getSavedDataInfo,
     hasUnsavedChanges,
     handleSubmit,
     setIsEditing,
@@ -38,7 +35,6 @@ export default function PersonalBatchFormPage() {
     getStepTitle,
     isStepCompleted,
     completedSteps,
-    setCompletedSteps,
     formData,
     photoFile,
     photoPreview,
